@@ -953,7 +953,7 @@ const RequestCard = ({ request, onRefresh, onViewDetails }) => {
       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
         <button
           onClick={onViewDetails}
-          className="px-4 py-2 bg-gradient-to-r from-turquoise-600 to-turquoise-700 text-white rounded-lg hover:from-turquoise-700 hover:to-turquoise-800 transition-all duration-200 shadow-sm font-medium"
+          className="px-4 py-2 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-lg hover:from-teal-700 hover:to-teal-800 transition-all duration-200 shadow-sm font-medium"
         >
           {t('viewDetails')}
         </button>
