@@ -182,7 +182,7 @@
 }
 
 .status-assigned {
-  @apply bg-turquoise-100 text-turquoise-800 border-turquoise-200;
+  @apply bg-teal-100 text-teal-800 border-teal-200;
 }
 
 /* Modal styles */
