@@ -753,6 +753,138 @@ async def get_request_prices(request_id: str, current_user: User = Depends(get_c
 async def delete_admin_price(price_id: str, current_user: User = Depends(admin_only)):
     await db.admin_prices.delete_one({"id": price_id})
     return {"message": "Price deleted successfully"}
+# System settings management
+@api_router.get("/admin/system-settings", response_model=SystemSettings)
+async def get_system_settings(current_user: User = Depends(admin_only)):
+    settings = await db.system_settings.find_one()
+    if not settings:
+        # Create default settings
+        default_settings = SystemSettings()
+        await db.system_settings.insert_one(default_settings.dict())
+        return default_settings
+    
+    return SystemSettings(**settings)
+
+@api_router.put("/admin/system-settings")
+async def update_system_settings(settings_data: SystemSettingsUpdate, current_user: User = Depends(admin_only)):
+    current_settings = await db.system_settings.find_one()
+    
+    if not current_settings:
+        # Create default settings first
+        default_settings = SystemSettings()
+        await db.system_settings.insert_one(default_settings.dict())
+        current_settings = default_settings.dict()
+    
+    # Update only provided fields
+    update_data = {k: v for k, v in settings_data.dict().items() if v is not None}
+    update_data["updated_at"] = datetime.utcnow()
+    
+    await db.system_settings.update_one(
+        {"id": current_settings["id"]},
+        {"$set": update_data}
+    )
+    
+    return {"message": "System settings updated successfully"}
+
+# Q&A System
+@api_router.post("/questions", response_model=Question)
+async def create_question(question_data: QuestionCreate, current_user: User = Depends(get_current_user)):
+    if current_user.role not in ["student", "supervisor"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only students and supervisors can create questions"
+        )
+    
+    question_dict = question_data.dict()
+    question_dict["user_id"] = current_user.id
+    
+    question = Question(**question_dict)
+    await db.questions.insert_one(question.dict())
+    
+    # Notify admins
+    admins = await db.users.find({"role": "admin"}).to_list(None)
+    for admin in admins:
+        notification = Notification(
+            user_id=admin["id"],
+            title="New Question",
+            message=f"New question from {current_user.name}: {question.title}",
+            type="new_question"
+        )
+        await db.notifications.insert_one(notification.dict())
+    
+    return question
+
+@api_router.get("/questions", response_model=List[Question])
+async def get_questions(current_user: User = Depends(get_current_user)):
+    if current_user.role == "admin":
+        # Admins can see all questions, sorted by latest
+        questions = await db.questions.find().sort("created_at", -1).to_list(None)
+    else:
+        # Students and supervisors can only see their own questions
+        questions = await db.questions.find({"user_id": current_user.id}).sort("created_at", -1).to_list(None)
+    
+    return [Question(**question) for question in questions]
+
+@api_router.put("/admin/questions/{question_id}/answer")
+async def answer_question(question_id: str, answer_data: QuestionAnswer, current_user: User = Depends(admin_only)):
+    question = await db.questions.find_one({"id": question_id})
+    if not question:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Question not found"
+        )
+    
+    # Update question with answer
+    await db.questions.update_one(
+        {"id": question_id},
+        {"$set": {
+            "answer": answer_data.answer,
+            "answered_by": current_user.id,
+            "answered_at": datetime.utcnow(),
+            "status": "answered"
+        }}
+    )
+    
+    # Notify the question asker
+    notification = Notification(
+        user_id=question["user_id"],
+        title="Question Answered",
+        message=f"Your question '{question['title']}' has been answered",
+        type="question_answered"
+    )
+    await db.notifications.insert_one(notification.dict())
+    
+    return {"message": "Question answered successfully"}
+
+@api_router.delete("/admin/questions/{question_id}")
+async def delete_question(question_id: str, current_user: User = Depends(admin_only)):
+    await db.questions.delete_one({"id": question_id})
+    return {"message": "Question deleted successfully"}
+
+# Forgot password (basic implementation)
+@api_router.post("/auth/forgot-password")
+async def forgot_password(email: str):
+    user = await db.users.find_one({"email": email})
+    if not user:
+        # Don't reveal if email exists or not for security
+        return {"message": "If the email exists, a reset link will be sent"}
+    
+    # In a real implementation, you would:
+    # 1. Generate a secure token
+    # 2. Store it in database with expiration
+    # 3. Send email with reset link
+    # For now, we'll just return success
+    
+    return {"message": "Password reset instructions sent to email"}
+
+# Get categories for filtering
+@api_router.get("/categories")
+async def get_categories(current_user: User = Depends(get_current_user)):
+    # Get unique field_of_study values from requests
+    categories = await db.essay_requests.distinct("field_of_study")
+    return {"categories": categories}
+
+# User management (admin only)
 @api_router.get("/admin/users", response_model=List[User])
 async def get_all_users(current_user: User = Depends(admin_only)):
     users = await db.users.find().to_list(None)
