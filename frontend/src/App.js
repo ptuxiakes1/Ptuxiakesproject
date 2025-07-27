@@ -483,7 +483,7 @@ const DashboardHome = ({ requests, bids, notifications }) => {
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <h2 className="text-2xl font-bold mb-6">{t('dashboard')}</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-blue-100 p-4 rounded-lg">
           <h3 className="font-semibold text-blue-800">{t('essayRequests')}</h3>
           <p className="text-2xl font-bold text-blue-600">{stats.totalRequests}</p>
