@@ -85,11 +85,52 @@ class Bid(BaseModel):
     status: str = "pending"  # pending, accepted, rejected
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+class SystemSettings(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    site_title: str = "Essay Bid Submission System"
+    site_description: str = "Professional essay writing and bidding platform"
+    header_color: str = "#1e3a8a"  # Default blue
+    header_text_color: str = "#ffffff"  # Default white
+    meta_keywords: str = "essay, writing, academic, bidding, students, supervisors"
+    meta_description: str = "Professional essay writing and bidding platform connecting students with qualified supervisors"
+    favicon_url: Optional[str] = None
+    logo_url: Optional[str] = None
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+class SystemSettingsUpdate(BaseModel):
+    site_title: Optional[str] = None
+    site_description: Optional[str] = None
+    header_color: Optional[str] = None
+    header_text_color: Optional[str] = None
+    meta_keywords: Optional[str] = None
+    meta_description: Optional[str] = None
+    favicon_url: Optional[str] = None
+    logo_url: Optional[str] = None
+
+class Question(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    title: str
+    question: str
+    category: str
+    status: str = "pending"  # pending, answered, closed
+    answer: Optional[str] = None
+    answered_by: Optional[str] = None
+    answered_at: Optional[datetime] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class QuestionCreate(BaseModel):
+    title: str
+    question: str
+    category: str
+
+class QuestionAnswer(BaseModel):
+    answer: str
+
 class BidCreate(BaseModel):
     request_id: str
     price: float
-    estimated_completion: datetime
-    proposal: str
+    notes: str
 
 class AdminPrice(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
