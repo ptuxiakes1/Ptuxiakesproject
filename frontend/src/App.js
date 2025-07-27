@@ -70,7 +70,18 @@ const translations = {
     assignToSupervisor: "Assign to Supervisor",
     chatHistory: "Chat History",
     noMessages: "No messages yet",
-    welcome: "Welcome"
+    welcome: "Welcome",
+    setPrice: "Set Price",
+    adminPrices: "Admin Prices",
+    pendingMessages: "Pending Messages",
+    approve: "Approve",
+    viewPrices: "View Prices",
+    waitingApproval: "Waiting for admin approval",
+    messageApproved: "Message approved",
+    userManagement: "User Management",
+    createUser: "Create User",
+    editUser: "Edit User",
+    updateUser: "Update User"
   },
   gr: {
     appTitle: "Σύστημα Υποβολής Προσφορών για Δοκίμια",
@@ -129,7 +140,18 @@ const translations = {
     assignToSupervisor: "Ανάθεση σε Επιβλέποντα",
     chatHistory: "Ιστορικό Συνομιλίας",
     noMessages: "Δεν υπάρχουν μηνύματα ακόμα",
-    welcome: "Καλώς ήρθατε"
+    welcome: "Καλώς ήρθατε",
+    setPrice: "Ορισμός Τιμής",
+    adminPrices: "Τιμές Διαχειριστή",
+    pendingMessages: "Μηνύματα σε Αναμονή",
+    approve: "Έγκριση",
+    viewPrices: "Προβολή Τιμών",
+    waitingApproval: "Αναμονή έγκρισης διαχειριστή",
+    messageApproved: "Μήνυμα εγκρίθηκε",
+    userManagement: "Διαχείριση Χρηστών",
+    createUser: "Δημιουργία Χρήστη",
+    editUser: "Επεξεργασία Χρήστη",
+    updateUser: "Ενημέρωση Χρήστη"
   }
 };
 
@@ -281,16 +303,16 @@ const AuthForm = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-teal-50 p-4">
-      <div className="max-w-md w-full space-y-8">
+      <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">
             {t('appTitle')}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             {isLogin ? t('login') : t('register')}
           </p>
         </div>
-        <form className="mt-8 space-y-6 bg-white p-8 rounded-2xl shadow-xl" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6 bg-white p-6 sm:p-8 rounded-2xl shadow-xl" onSubmit={handleSubmit}>
           <div className="space-y-4">
             {!isLogin && (
               <input
@@ -298,7 +320,7 @@ const AuthForm = () => {
                 placeholder={t('name')}
                 value={formData.name}
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                 required
               />
             )}
@@ -307,7 +329,7 @@ const AuthForm = () => {
               placeholder={t('email')}
               value={formData.email}
               onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
               required
             />
             <input
@@ -315,14 +337,14 @@ const AuthForm = () => {
               placeholder={t('password')}
               value={formData.password}
               onChange={(e) => setFormData({...formData, password: e.target.value})}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
               required
             />
             {!isLogin && (
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
               >
                 <option value="student">{t('student')}</option>
                 <option value="supervisor">{t('supervisor')}</option>
@@ -342,9 +364,9 @@ const AuthForm = () => {
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
-              className="text-blue-600 hover:text-blue-500 transition-colors"
+              className="text-blue-600 hover:text-blue-500 transition-colors text-sm sm:text-base"
             >
-              {isLogin ? 'Need to register?' : 'Already have an account?'}
+              {isLogin ? 'Χρειάζεστε να εγγραφείτε;' : 'Έχετε ήδη λογαριασμό;'}
             </button>
           </div>
         </form>
@@ -357,24 +379,51 @@ const AuthForm = () => {
 const Navigation = () => {
   const { user, logout } = useContext(AuthContext);
   const { language, setLanguage, t } = useContext(LanguageContext);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await axios.get(`${API}/notifications`);
+      setNotifications(response.data);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <nav className="bg-gradient-to-r from-blue-800 to-blue-900 text-white p-4 shadow-lg">
-      <div className="container mx-auto flex justify-between items-center">
-        <h1 className="text-xl font-bold">{t('appTitle')}</h1>
-        <div className="flex items-center space-x-4">
+      <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+        <h1 className="text-lg sm:text-xl font-bold text-center sm:text-left leading-tight">
+          {t('appTitle')}
+        </h1>
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
-            className="px-3 py-2 bg-blue-700 text-white rounded-lg border border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="px-3 py-2 bg-blue-700 text-white rounded-lg border border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
           >
             <option value="gr">{t('greek')}</option>
             <option value="en">{t('english')}</option>
           </select>
-          <span className="text-sm">{t('welcome')}, {user?.name}</span>
+          <div className="hidden sm:flex items-center space-x-2">
+            <span className="text-sm">{t('welcome')}, {user?.name}</span>
+            {unreadCount > 0 && (
+              <div className="relative">
+                <div className="bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                  {unreadCount}
+                </div>
+              </div>
+            )}
+          </div>
           <button
             onClick={logout}
-            className="px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+            className="px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition-colors text-sm"
           >
             {t('logout')}
           </button>
@@ -434,10 +483,14 @@ const Dashboard = () => {
         return user?.role === 'admin' ? <AdminSettings /> : <div>Access denied</div>;
       case 'users':
         return user?.role === 'admin' ? <UserManagement /> : <div>Access denied</div>;
+      case 'pendingMessages':
+        return user?.role === 'admin' ? <PendingMessages /> : <div>Access denied</div>;
       default:
         return <DashboardHome requests={requests} assignedRequests={assignedRequests} bids={bids} notifications={notifications} />;
     }
   };
+
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50">
@@ -448,47 +501,58 @@ const Dashboard = () => {
             <nav className="flex md:flex-col space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto md:overflow-x-visible">
               <button
                 onClick={() => setCurrentView('dashboard')}
-                className={`flex-shrink-0 px-4 py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 ${currentView === 'dashboard' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
+                className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'dashboard' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
               >
                 {t('dashboard')}
               </button>
               <button
                 onClick={() => setCurrentView('requests')}
-                className={`flex-shrink-0 px-4 py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 ${currentView === 'requests' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
+                className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'requests' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
               >
                 {t('essayRequests')}
               </button>
               <button
                 onClick={() => setCurrentView('assigned')}
-                className={`flex-shrink-0 px-4 py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 ${currentView === 'assigned' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
+                className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'assigned' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
               >
                 {t('assignedEssays')}
               </button>
               {(user?.role === 'supervisor' || user?.role === 'admin') && (
                 <button
                   onClick={() => setCurrentView('bids')}
-                  className={`flex-shrink-0 px-4 py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 ${currentView === 'bids' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
+                  className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'bids' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
                 >
                   {t('bids')}
                 </button>
               )}
               <button
                 onClick={() => setCurrentView('notifications')}
-                className={`flex-shrink-0 px-4 py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 ${currentView === 'notifications' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
+                className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'notifications' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'} relative`}
               >
-                {t('notifications')} {notifications.filter(n => !n.read).length > 0 && <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs ml-2">{notifications.filter(n => !n.read).length}</span>}
+                {t('notifications')} 
+                {unreadCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs">
+                    {unreadCount}
+                  </span>
+                )}
               </button>
               {user?.role === 'admin' && (
                 <>
                   <button
+                    onClick={() => setCurrentView('pendingMessages')}
+                    className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'pendingMessages' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
+                  >
+                    {t('pendingMessages')}
+                  </button>
+                  <button
                     onClick={() => setCurrentView('settings')}
-                    className={`flex-shrink-0 px-4 py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 ${currentView === 'settings' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
+                    className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'settings' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
                   >
                     {t('settings')}
                   </button>
                   <button
                     onClick={() => setCurrentView('users')}
-                    className={`flex-shrink-0 px-4 py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 ${currentView === 'users' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
+                    className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'users' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
                   >
                     {t('users')}
                   </button>
@@ -518,24 +582,24 @@ const DashboardHome = ({ requests, assignedRequests, bids, notifications }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-lg">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{t('dashboard')}</h2>
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">{t('dashboard')}</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-6 rounded-xl shadow-sm border border-blue-200">
-          <h3 className="font-semibold text-blue-800 mb-2">{t('essayRequests')}</h3>
-          <p className="text-3xl font-bold text-blue-600">{stats.totalRequests}</p>
+        <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-4 sm:p-6 rounded-xl shadow-sm border border-blue-200">
+          <h3 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">{t('essayRequests')}</h3>
+          <p className="text-2xl sm:text-3xl font-bold text-blue-600">{stats.totalRequests}</p>
         </div>
-        <div className="bg-gradient-to-br from-teal-100 to-teal-200 p-6 rounded-xl shadow-sm border border-teal-200">
-          <h3 className="font-semibold text-teal-800 mb-2">{t('assignedEssays')}</h3>
-          <p className="text-3xl font-bold text-teal-600">{stats.assignedRequests}</p>
+        <div className="bg-gradient-to-br from-teal-100 to-teal-200 p-4 sm:p-6 rounded-xl shadow-sm border border-teal-200">
+          <h3 className="font-semibold text-teal-800 mb-2 text-sm sm:text-base">{t('assignedEssays')}</h3>
+          <p className="text-2xl sm:text-3xl font-bold text-teal-600">{stats.assignedRequests}</p>
         </div>
-        <div className="bg-gradient-to-br from-green-100 to-green-200 p-6 rounded-xl shadow-sm border border-green-200">
-          <h3 className="font-semibold text-green-800 mb-2">{t('bids')}</h3>
-          <p className="text-3xl font-bold text-green-600">{stats.totalBids}</p>
+        <div className="bg-gradient-to-br from-green-100 to-green-200 p-4 sm:p-6 rounded-xl shadow-sm border border-green-200">
+          <h3 className="font-semibold text-green-800 mb-2 text-sm sm:text-base">{t('bids')}</h3>
+          <p className="text-2xl sm:text-3xl font-bold text-green-600">{stats.totalBids}</p>
         </div>
-        <div className="bg-gradient-to-br from-red-100 to-red-200 p-6 rounded-xl shadow-sm border border-red-200">
-          <h3 className="font-semibold text-red-800 mb-2">{t('notifications')}</h3>
-          <p className="text-3xl font-bold text-red-600">{stats.unreadNotifications}</p>
+        <div className="bg-gradient-to-br from-red-100 to-red-200 p-4 sm:p-6 rounded-xl shadow-sm border border-red-200">
+          <h3 className="font-semibold text-red-800 mb-2 text-sm sm:text-base">{t('notifications')}</h3>
+          <p className="text-2xl sm:text-3xl font-bold text-red-600">{stats.unreadNotifications}</p>
         </div>
       </div>
     </div>
@@ -550,13 +614,13 @@ const EssayRequestsView = ({ requests, onRefresh }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-lg">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">{t('essayRequests')}</h2>
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-4 sm:space-y-0">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{t('essayRequests')}</h2>
         {user?.role === 'student' && (
           <button
             onClick={() => setShowCreateForm(true)}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg font-medium"
+            className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg font-medium text-sm sm:text-base"
           >
             {t('createRequest')}
           </button>
@@ -601,8 +665,8 @@ const AssignedEssaysView = ({ requests, onRefresh }) => {
   const [showChat, setShowChat] = useState(null);
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-lg">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{t('assignedEssays')}</h2>
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">{t('assignedEssays')}</h2>
       
       {showChat && (
         <ChatModal
@@ -614,21 +678,21 @@ const AssignedEssaysView = ({ requests, onRefresh }) => {
 
       <div className="space-y-4">
         {requests.map((request) => (
-          <div key={request.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="font-semibold text-lg text-gray-800">{request.title}</h3>
-              <span className="px-3 py-1 rounded-full text-sm bg-green-100 text-green-800 border border-green-200">
+          <div key={request.id} className="border border-gray-200 rounded-xl p-4 sm:p-6 hover:shadow-md transition-shadow">
+            <div className="flex flex-col sm:flex-row justify-between items-start mb-4 space-y-2 sm:space-y-0">
+              <h3 className="font-semibold text-base sm:text-lg text-gray-800">{request.title}</h3>
+              <span className="px-3 py-1 rounded-full text-xs sm:text-sm bg-green-100 text-green-800 border border-green-200">
                 {t('accepted')}
               </span>
             </div>
-            <p className="text-gray-600 mb-2">
+            <p className="text-gray-600 mb-2 text-sm sm:text-base">
               {assignmentTypes[request.assignment_type]} • {request.field_of_study} • {request.word_count} words
             </p>
-            <p className="text-gray-500 mb-4">Due: {new Date(request.due_date).toLocaleDateString()}</p>
+            <p className="text-gray-500 mb-4 text-sm">Due: {new Date(request.due_date).toLocaleDateString()}</p>
             
             <button
               onClick={() => setShowChat(request)}
-              className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-sm font-medium"
+              className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-sm font-medium text-sm sm:text-base"
             >
               {t('chat')}
             </button>
@@ -639,18 +703,24 @@ const AssignedEssaysView = ({ requests, onRefresh }) => {
   );
 };
 
-// Request Details Modal
+// Request Details Modal with Admin Pricing
 const RequestDetailsModal = ({ request, onClose, onRefresh }) => {
   const { user } = useContext(AuthContext);
   const { t } = useContext(LanguageContext);
   const [bids, setBids] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
   const [selectedSupervisor, setSelectedSupervisor] = useState('');
+  const [adminPrices, setAdminPrices] = useState([]);
+  const [showPriceForm, setShowPriceForm] = useState(false);
+  const [priceData, setPriceData] = useState({ price: '' });
 
   useEffect(() => {
     if (user?.role === 'admin') {
       fetchBids();
       fetchSupervisors();
+    }
+    if (user?.role === 'student' || user?.role === 'admin') {
+      fetchAdminPrices();
     }
   }, []);
 
@@ -669,6 +739,15 @@ const RequestDetailsModal = ({ request, onClose, onRefresh }) => {
       setSupervisors(response.data);
     } catch (error) {
       console.error('Error fetching supervisors:', error);
+    }
+  };
+
+  const fetchAdminPrices = async () => {
+    try {
+      const response = await axios.get(`${API}/prices/request/${request.id}`);
+      setAdminPrices(response.data);
+    } catch (error) {
+      console.error('Error fetching admin prices:', error);
     }
   };
 
@@ -698,34 +777,110 @@ const RequestDetailsModal = ({ request, onClose, onRefresh }) => {
     }
   };
 
+  const handleSetPrice = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/admin/prices`, {
+        request_id: request.id,
+        price: parseFloat(priceData.price)
+      });
+      setShowPriceForm(false);
+      setPriceData({ price: '' });
+      fetchAdminPrices();
+    } catch (error) {
+      console.error('Error setting price:', error);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white p-6 rounded-2xl w-full max-w-4xl max-h-96 overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-gray-800">{request.title}</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+      <div className="bg-white p-4 sm:p-6 rounded-2xl w-full max-w-4xl max-h-96 overflow-y-auto">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-800">{request.title}</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-xl sm:text-2xl">×</button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <div>
-            <h4 className="font-semibold mb-2 text-gray-700">Request Details</h4>
-            <p><strong>Type:</strong> {assignmentTypes[request.assignment_type]}</p>
-            <p><strong>Field:</strong> {request.field_of_study}</p>
-            <p><strong>Word Count:</strong> {request.word_count}</p>
-            <p><strong>Due Date:</strong> {new Date(request.due_date).toLocaleDateString()}</p>
-            <p><strong>Status:</strong> {t(request.status)}</p>
+            <h4 className="font-semibold mb-2 text-gray-700 text-sm sm:text-base">Request Details</h4>
+            <div className="space-y-2 text-sm sm:text-base">
+              <p><strong>Type:</strong> {assignmentTypes[request.assignment_type]}</p>
+              <p><strong>Field:</strong> {request.field_of_study}</p>
+              <p><strong>Word Count:</strong> {request.word_count}</p>
+              <p><strong>Due Date:</strong> {new Date(request.due_date).toLocaleDateString()}</p>
+              <p><strong>Status:</strong> {t(request.status)}</p>
+            </div>
             {request.extra_information && (
               <div className="mt-4">
-                <strong>Extra Information:</strong>
-                <p className="text-gray-600 mt-1">{request.extra_information}</p>
+                <strong className="text-sm sm:text-base">Extra Information:</strong>
+                <p className="text-gray-600 mt-1 text-sm sm:text-base">{request.extra_information}</p>
+              </div>
+            )}
+            
+            {/* Student/Admin View: Admin Prices */}
+            {(user?.role === 'student' || user?.role === 'admin') && (
+              <div className="mt-4">
+                <h4 className="font-semibold mb-2 text-gray-700 text-sm sm:text-base">{t('adminPrices')}</h4>
+                {adminPrices.length > 0 ? (
+                  <div className="space-y-2">
+                    {adminPrices.map((price) => (
+                      <div key={price.id} className="bg-blue-50 p-3 rounded-lg">
+                        <p className="font-medium text-blue-800 text-sm sm:text-base">${price.price}</p>
+                        <p className="text-xs text-gray-600">Set: {new Date(price.created_at).toLocaleDateString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">No admin prices set</p>
+                )}
               </div>
             )}
           </div>
           
           {user?.role === 'admin' && (
             <div>
-              <h4 className="font-semibold mb-2 text-gray-700">Admin Actions</h4>
+              <h4 className="font-semibold mb-2 text-gray-700 text-sm sm:text-base">Admin Actions</h4>
               
+              {/* Set Price Button */}
+              <div className="mb-4">
+                <button
+                  onClick={() => setShowPriceForm(!showPriceForm)}
+                  className="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 text-sm sm:text-base"
+                >
+                  {t('setPrice')}
+                </button>
+                
+                {showPriceForm && (
+                  <form onSubmit={handleSetPrice} className="mt-2 space-y-2">
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="Enter price"
+                      value={priceData.price}
+                      onChange={(e) => setPriceData({...priceData, price: e.target.value})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                      required
+                    />
+                    <div className="flex space-x-2">
+                      <button
+                        type="submit"
+                        className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                      >
+                        Set
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowPriceForm(false)}
+                        className="flex-1 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+              
+              {/* Assign Supervisor */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t('assignToSupervisor')}
@@ -733,7 +888,7 @@ const RequestDetailsModal = ({ request, onClose, onRefresh }) => {
                 <select
                   value={selectedSupervisor}
                   onChange={(e) => setSelectedSupervisor(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                 >
                   <option value="">Select supervisor</option>
                   {supervisors.map(supervisor => (
@@ -745,18 +900,19 @@ const RequestDetailsModal = ({ request, onClose, onRefresh }) => {
                 <button
                   onClick={handleAssignSupervisor}
                   disabled={!selectedSupervisor}
-                  className="mt-2 w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50"
+                  className="mt-2 w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 disabled:opacity-50 text-sm sm:text-base"
                 >
                   {t('assign')}
                 </button>
               </div>
               
-              <h4 className="font-semibold mb-2 text-gray-700">Bids ({bids.length})</h4>
+              {/* Bids Management */}
+              <h4 className="font-semibold mb-2 text-gray-700 text-sm sm:text-base">Bids ({bids.length})</h4>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {bids.map((bid) => (
                   <div key={bid.id} className="border border-gray-200 rounded-lg p-3">
                     <div className="flex justify-between items-start mb-2">
-                      <span className="font-medium">${bid.price}</span>
+                      <span className="font-medium text-sm sm:text-base">${bid.price}</span>
                       <span className={`px-2 py-1 rounded-full text-xs ${
                         bid.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                         bid.status === 'accepted' ? 'bg-green-100 text-green-800' :
@@ -765,18 +921,18 @@ const RequestDetailsModal = ({ request, onClose, onRefresh }) => {
                         {t(bid.status)}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 mb-2">{bid.proposal}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-2">{bid.proposal}</p>
                     {bid.status === 'pending' && (
                       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                         <button
                           onClick={() => handleBidAction(bid.id, 'accepted')}
-                          className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                          className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs sm:text-sm"
                         >
                           Accept
                         </button>
                         <button
                           onClick={() => handleBidAction(bid.id, 'rejected')}
-                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs sm:text-sm"
                         >
                           Reject
                         </button>
@@ -823,45 +979,24 @@ const CreateRequestForm = ({ onClose, onSuccess }) => {
     }
   };
 
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const response = await axios.post(`${API}/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      
-      setFormData(prev => ({
-        ...prev,
-        attachments: [...prev.attachments, response.data.data]
-      }));
-    } catch (error) {
-      console.error('Error uploading file:', error);
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white p-6 rounded-2xl w-full max-w-md max-h-96 overflow-y-auto">
-        <h3 className="text-xl font-bold mb-4 text-gray-800">{t('createRequest')}</h3>
+      <div className="bg-white p-4 sm:p-6 rounded-2xl w-full max-w-md max-h-96 overflow-y-auto">
+        <h3 className="text-lg sm:text-xl font-bold mb-4 text-gray-800">{t('createRequest')}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
             placeholder={t('title')}
             value={formData.title}
             onChange={(e) => setFormData({...formData, title: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             required
           />
           <input
             type="datetime-local"
             value={formData.due_date}
             onChange={(e) => setFormData({...formData, due_date: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             required
           />
           <input
@@ -869,13 +1004,13 @@ const CreateRequestForm = ({ onClose, onSuccess }) => {
             placeholder={t('wordCount')}
             value={formData.word_count}
             onChange={(e) => setFormData({...formData, word_count: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             required
           />
           <select
             value={formData.assignment_type}
             onChange={(e) => setFormData({...formData, assignment_type: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
           >
             {Object.entries(assignmentTypes).map(([key, value]) => (
               <option key={key} value={key}>{value}</option>
@@ -884,7 +1019,7 @@ const CreateRequestForm = ({ onClose, onSuccess }) => {
           <select
             value={formData.field_of_study}
             onChange={(e) => setFormData({...formData, field_of_study: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             required
           >
             <option value="">{t('fieldOfStudy')}</option>
@@ -892,29 +1027,24 @@ const CreateRequestForm = ({ onClose, onSuccess }) => {
               <option key={field} value={field}>{field}</option>
             ))}
           </select>
-          <input
-            type="file"
-            onChange={handleFileUpload}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
           <textarea
             placeholder={t('extraInfo')}
             value={formData.extra_information}
             onChange={(e) => setFormData({...formData, extra_information: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             rows="3"
           />
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <button
               type="submit"
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium text-sm sm:text-base"
             >
               {t('submit')}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-medium"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-medium text-sm sm:text-base"
             >
               {t('cancel')}
             </button>
@@ -930,6 +1060,22 @@ const RequestCard = ({ request, onRefresh, onViewDetails }) => {
   const { user } = useContext(AuthContext);
   const { t } = useContext(LanguageContext);
   const [showBidForm, setShowBidForm] = useState(false);
+  const [adminPrices, setAdminPrices] = useState([]);
+
+  useEffect(() => {
+    if (user?.role === 'student') {
+      fetchAdminPrices();
+    }
+  }, []);
+
+  const fetchAdminPrices = async () => {
+    try {
+      const response = await axios.get(`${API}/prices/request/${request.id}`);
+      setAdminPrices(response.data);
+    } catch (error) {
+      console.error('Error fetching admin prices:', error);
+    }
+  };
 
   const statusColor = {
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -938,29 +1084,43 @@ const RequestCard = ({ request, onRefresh, onViewDetails }) => {
   };
 
   return (
-    <div className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
-      <div className="flex justify-between items-start mb-4">
-        <h3 className="font-semibold text-lg text-gray-800">{request.title}</h3>
-        <span className={`px-3 py-1 rounded-full text-sm border ${statusColor[request.status]}`}>
+    <div className="border border-gray-200 rounded-xl p-4 sm:p-6 hover:shadow-md transition-shadow">
+      <div className="flex flex-col sm:flex-row justify-between items-start mb-4 space-y-2 sm:space-y-0">
+        <h3 className="font-semibold text-base sm:text-lg text-gray-800">{request.title}</h3>
+        <span className={`px-3 py-1 rounded-full text-xs sm:text-sm border ${statusColor[request.status]}`}>
           {t(request.status)}
         </span>
       </div>
-      <p className="text-gray-600 mb-2">
+      <p className="text-gray-600 mb-2 text-sm sm:text-base">
         {assignmentTypes[request.assignment_type]} • {request.field_of_study} • {request.word_count} words
       </p>
-      <p className="text-gray-500 mb-4">Due: {new Date(request.due_date).toLocaleDateString()}</p>
+      <p className="text-gray-500 mb-4 text-sm">Due: {new Date(request.due_date).toLocaleDateString()}</p>
+      
+      {/* Show admin prices to students */}
+      {user?.role === 'student' && adminPrices.length > 0 && (
+        <div className="mb-4">
+          <h4 className="font-semibold text-gray-700 mb-2 text-sm sm:text-base">Admin Prices:</h4>
+          <div className="space-y-2">
+            {adminPrices.map((price) => (
+              <div key={price.id} className="bg-blue-50 p-2 rounded-lg">
+                <p className="font-medium text-blue-800 text-sm sm:text-base">${price.price}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
         <button
           onClick={onViewDetails}
-          className="px-4 py-2 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-lg hover:from-teal-700 hover:to-teal-800 transition-all duration-200 shadow-sm font-medium"
+          className="px-4 py-2 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-lg hover:from-teal-700 hover:to-teal-800 transition-all duration-200 shadow-sm font-medium text-sm sm:text-base"
         >
           {t('viewDetails')}
         </button>
         {user?.role === 'supervisor' && request.status === 'pending' && (
           <button
             onClick={() => setShowBidForm(true)}
-            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm font-medium"
+            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm font-medium text-sm sm:text-base"
           >
             {t('createBid')}
           </button>
@@ -1010,8 +1170,8 @@ const CreateBidForm = ({ requestId, onClose, onSuccess }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white p-6 rounded-2xl w-full max-w-md">
-        <h3 className="text-xl font-bold mb-4 text-gray-800">{t('createBid')}</h3>
+      <div className="bg-white p-4 sm:p-6 rounded-2xl w-full max-w-md">
+        <h3 className="text-lg sm:text-xl font-bold mb-4 text-gray-800">{t('createBid')}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="number"
@@ -1019,35 +1179,35 @@ const CreateBidForm = ({ requestId, onClose, onSuccess }) => {
             placeholder={t('price')}
             value={formData.price}
             onChange={(e) => setFormData({...formData, price: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             required
           />
           <input
             type="datetime-local"
             value={formData.estimated_completion}
             onChange={(e) => setFormData({...formData, estimated_completion: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             required
           />
           <textarea
             placeholder={t('proposal')}
             value={formData.proposal}
             onChange={(e) => setFormData({...formData, proposal: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             rows="4"
             required
           />
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <button
               type="submit"
-              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium text-sm sm:text-base"
             >
               {t('submit')}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-medium"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-medium text-sm sm:text-base"
             >
               {t('cancel')}
             </button>
@@ -1058,7 +1218,7 @@ const CreateBidForm = ({ requestId, onClose, onSuccess }) => {
   );
 };
 
-// Chat Modal Component
+// Chat Modal Component with Admin Approval
 const ChatModal = ({ requestId, requestTitle, onClose }) => {
   const { user } = useContext(AuthContext);
   const { t } = useContext(LanguageContext);
@@ -1089,7 +1249,7 @@ const ChatModal = ({ requestId, requestTitle, onClose }) => {
         message: newMessage
       });
       setNewMessage('');
-      fetchMessages();
+      alert(t('waitingApproval'));
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -1097,15 +1257,15 @@ const ChatModal = ({ requestId, requestTitle, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white p-6 rounded-2xl w-full max-w-md h-96">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl w-full max-w-md h-96">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold text-gray-800">{requestTitle}</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+          <h3 className="text-lg sm:text-xl font-bold text-gray-800">{requestTitle}</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 text-xl sm:text-2xl">×</button>
         </div>
         
         <div className="h-64 overflow-y-auto mb-4 border border-gray-200 rounded-xl p-4 bg-gray-50">
           {messages.length === 0 ? (
-            <p className="text-gray-500 text-center">{t('noMessages')}</p>
+            <p className="text-gray-500 text-center text-sm sm:text-base">{t('noMessages')}</p>
           ) : (
             messages.map((message) => (
               <div key={message.id} className={`mb-3 p-3 rounded-xl ${
@@ -1117,6 +1277,11 @@ const ChatModal = ({ requestId, requestTitle, onClose }) => {
                 <p className="text-xs opacity-75 mt-1">
                   {new Date(message.timestamp).toLocaleString()}
                 </p>
+                {message.approved && (
+                  <span className="text-xs bg-green-500 text-white px-2 py-1 rounded-full">
+                    {t('messageApproved')}
+                  </span>
+                )}
               </div>
             ))
           )}
@@ -1128,15 +1293,82 @@ const ChatModal = ({ requestId, requestTitle, onClose }) => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder={t('message')}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
           />
           <button
             type="submit"
-            className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium"
+            className="px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium text-sm sm:text-base"
           >
             {t('sendMessage')}
           </button>
         </form>
+      </div>
+    </div>
+  );
+};
+
+// Pending Messages Component (Admin)
+const PendingMessages = () => {
+  const { t } = useContext(LanguageContext);
+  const [pendingMessages, setPendingMessages] = useState([]);
+
+  useEffect(() => {
+    fetchPendingMessages();
+  }, []);
+
+  const fetchPendingMessages = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/messages/pending`);
+      setPendingMessages(response.data);
+    } catch (error) {
+      console.error('Error fetching pending messages:', error);
+    }
+  };
+
+  const approveMessage = async (messageId) => {
+    try {
+      await axios.put(`${API}/admin/messages/${messageId}/approve`);
+      fetchPendingMessages();
+    } catch (error) {
+      console.error('Error approving message:', error);
+    }
+  };
+
+  const deleteMessage = async (messageId) => {
+    try {
+      await axios.delete(`${API}/admin/messages/${messageId}`);
+      fetchPendingMessages();
+    } catch (error) {
+      console.error('Error deleting message:', error);
+    }
+  };
+
+  return (
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">{t('pendingMessages')}</h2>
+      <div className="space-y-4">
+        {pendingMessages.map((message) => (
+          <div key={message.id} className="border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+            <p className="text-sm sm:text-base text-gray-800 mb-2">{message.message}</p>
+            <p className="text-xs text-gray-500 mb-4">
+              {new Date(message.timestamp).toLocaleString()}
+            </p>
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+              <button
+                onClick={() => approveMessage(message.id)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base"
+              >
+                {t('approve')}
+              </button>
+              <button
+                onClick={() => deleteMessage(message.id)}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
+              >
+                {t('delete')}
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1148,17 +1380,17 @@ const BidsView = ({ bids, onRefresh }) => {
   const { t } = useContext(LanguageContext);
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-lg">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{t('bids')}</h2>
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">{t('bids')}</h2>
       <div className="space-y-4">
         {bids.map((bid) => (
-          <div key={bid.id} className="border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
-            <div className="flex justify-between items-start mb-4">
+          <div key={bid.id} className="border border-gray-200 rounded-xl p-4 sm:p-6 hover:shadow-md transition-shadow">
+            <div className="flex flex-col sm:flex-row justify-between items-start mb-4 space-y-2 sm:space-y-0">
               <div>
-                <p className="font-semibold text-lg text-gray-800">{t('price')}: ${bid.price}</p>
-                <p className="text-gray-600">{t('estimatedCompletion')}: {new Date(bid.estimated_completion).toLocaleDateString()}</p>
+                <p className="font-semibold text-base sm:text-lg text-gray-800">{t('price')}: ${bid.price}</p>
+                <p className="text-gray-600 text-sm sm:text-base">{t('estimatedCompletion')}: {new Date(bid.estimated_completion).toLocaleDateString()}</p>
               </div>
-              <span className={`px-3 py-1 rounded-full text-sm border ${
+              <span className={`px-3 py-1 rounded-full text-xs sm:text-sm border ${
                 bid.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
                 bid.status === 'accepted' ? 'bg-green-100 text-green-800 border-green-200' :
                 'bg-red-100 text-red-800 border-red-200'
@@ -1166,7 +1398,7 @@ const BidsView = ({ bids, onRefresh }) => {
                 {t(bid.status)}
               </span>
             </div>
-            <p className="text-gray-700 mb-4">{bid.proposal}</p>
+            <p className="text-gray-700 mb-4 text-sm sm:text-base">{bid.proposal}</p>
           </div>
         ))}
       </div>
@@ -1188,18 +1420,18 @@ const NotificationsView = ({ notifications, onRefresh }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-lg">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{t('notifications')}</h2>
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">{t('notifications')}</h2>
       <div className="space-y-4">
         {notifications.map((notification) => (
           <div
             key={notification.id}
             className={`border rounded-xl p-4 ${notification.read ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200'}`}
           >
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-semibold text-gray-800">{notification.title}</h3>
-                <p className="text-gray-600">{notification.message}</p>
+            <div className="flex flex-col sm:flex-row justify-between items-start space-y-2 sm:space-y-0">
+              <div className="flex-1">
+                <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{notification.title}</h3>
+                <p className="text-gray-600 text-sm sm:text-base">{notification.message}</p>
                 <p className="text-xs text-gray-500 mt-2">
                   {new Date(notification.created_at).toLocaleString()}
                 </p>
@@ -1207,7 +1439,7 @@ const NotificationsView = ({ notifications, onRefresh }) => {
               {!notification.read && (
                 <button
                   onClick={() => markAsRead(notification.id)}
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm font-medium whitespace-nowrap"
                 >
                   Mark as read
                 </button>
@@ -1250,21 +1482,21 @@ const AdminSettings = () => {
     }
   };
 
-  if (loading) return <div className="bg-white p-6 rounded-2xl shadow-lg">Loading...</div>;
+  if (loading) return <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">Loading...</div>;
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-lg">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">{t('adminSettings')}</h2>
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">{t('adminSettings')}</h2>
       
       <div className="space-y-6">
-        <div className="border border-gray-200 rounded-xl p-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-700">Authentication Settings</h3>
+        <div className="border border-gray-200 rounded-xl p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-4 text-gray-700">Authentication Settings</h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">{t('emergentAuth')}</span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
+              <span className="text-gray-700 text-sm sm:text-base">{t('emergentAuth')}</span>
               <button
                 onClick={() => updateSettings({ emergent_auth_enabled: !settings.emergent_auth_enabled })}
-                className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+                className={`px-4 py-2 rounded-lg transition-all duration-200 text-sm sm:text-base ${
                   settings.emergent_auth_enabled 
                     ? 'bg-green-600 text-white hover:bg-green-700' 
                     : 'bg-gray-600 text-white hover:bg-gray-700'
@@ -1274,11 +1506,11 @@ const AdminSettings = () => {
               </button>
             </div>
             
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">{t('googleOAuth')}</span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
+              <span className="text-gray-700 text-sm sm:text-base">{t('googleOAuth')}</span>
               <button
                 onClick={() => updateSettings({ google_oauth_enabled: !settings.google_oauth_enabled })}
-                className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+                className={`px-4 py-2 rounded-lg transition-all duration-200 text-sm sm:text-base ${
                   settings.google_oauth_enabled 
                     ? 'bg-green-600 text-white hover:bg-green-700' 
                     : 'bg-gray-600 text-white hover:bg-gray-700'
@@ -1290,13 +1522,13 @@ const AdminSettings = () => {
           </div>
         </div>
 
-        <div className="border border-gray-200 rounded-xl p-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-700">Email Settings</h3>
-          <div className="flex items-center justify-between">
-            <span className="text-gray-700">{t('emailNotifications')}</span>
+        <div className="border border-gray-200 rounded-xl p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-4 text-gray-700">Email Settings</h3>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
+            <span className="text-gray-700 text-sm sm:text-base">{t('emailNotifications')}</span>
             <button
               onClick={() => updateSettings({ email_notifications_enabled: !settings.email_notifications_enabled })}
-              className={`px-4 py-2 rounded-lg transition-all duration-200 ${
+              className={`px-4 py-2 rounded-lg transition-all duration-200 text-sm sm:text-base ${
                 settings.email_notifications_enabled 
                   ? 'bg-green-600 text-white hover:bg-green-700' 
                   : 'bg-gray-600 text-white hover:bg-gray-700'
@@ -1307,14 +1539,14 @@ const AdminSettings = () => {
           </div>
         </div>
 
-        <div className="border border-gray-200 rounded-xl p-6">
-          <h3 className="text-lg font-semibold mb-4 text-gray-700">System Settings</h3>
-          <div className="flex items-center justify-between">
-            <span className="text-gray-700">{t('language')}</span>
+        <div className="border border-gray-200 rounded-xl p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold mb-4 text-gray-700">System Settings</h3>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
+            <span className="text-gray-700 text-sm sm:text-base">{t('language')}</span>
             <select
               value={settings.system_language}
               onChange={(e) => updateSettings({ system_language: e.target.value })}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             >
               <option value="gr">{t('greek')}</option>
               <option value="en">{t('english')}</option>
@@ -1326,11 +1558,12 @@ const AdminSettings = () => {
   );
 };
 
-// User Management Component
+// User Management Component with Full CRUD
 const UserManagement = () => {
   const { t } = useContext(LanguageContext);
   const [users, setUsers] = useState([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
 
   useEffect(() => {
     fetchUsers();
@@ -1366,39 +1599,67 @@ const UserManagement = () => {
     }
   };
 
+  const updateUser = async (userId, userData) => {
+    try {
+      await axios.put(`${API}/admin/users/${userId}`, userData);
+      fetchUsers();
+      setEditingUser(null);
+    } catch (error) {
+      console.error('Error updating user:', error);
+    }
+  };
+
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-lg">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">{t('users')}</h2>
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-4 sm:space-y-0">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{t('userManagement')}</h2>
         <button
           onClick={() => setShowCreateForm(true)}
-          className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg font-medium"
+          className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg font-medium text-sm sm:text-base"
         >
-          {t('create')} {t('users')}
+          {t('createUser')}
         </button>
       </div>
       
       {showCreateForm && (
-        <CreateUserForm
+        <UserForm
           onClose={() => setShowCreateForm(false)}
-          onSuccess={createUser}
+          onSubmit={createUser}
+          title={t('createUser')}
+        />
+      )}
+
+      {editingUser && (
+        <UserForm
+          user={editingUser}
+          onClose={() => setEditingUser(null)}
+          onSubmit={(userData) => updateUser(editingUser.id, userData)}
+          title={t('editUser')}
         />
       )}
       
       <div className="space-y-4">
         {users.map((user) => (
-          <div key={user.id} className="border border-gray-200 rounded-xl p-4 flex justify-between items-center hover:shadow-md transition-shadow">
-            <div>
-              <h3 className="font-semibold text-gray-800">{user.name}</h3>
-              <p className="text-gray-600">{user.email}</p>
-              <p className="text-sm text-gray-500">{t(user.role)}</p>
+          <div key={user.id} className="border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center hover:shadow-md transition-shadow space-y-4 sm:space-y-0">
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-800 text-sm sm:text-base">{user.name}</h3>
+              <p className="text-gray-600 text-sm sm:text-base">{user.email}</p>
+              <p className="text-xs sm:text-sm text-gray-500">{t(user.role)}</p>
             </div>
-            <button
-              onClick={() => deleteUser(user.id)}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-medium"
-            >
-              {t('delete')}
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setEditingUser(user)}
+                className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium text-xs sm:text-sm"
+              >
+                {t('edit')}
+              </button>
+              <button
+                onClick={() => deleteUser(user.id)}
+                className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200 font-medium text-xs sm:text-sm"
+              >
+                {t('delete')}
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -1406,32 +1667,32 @@ const UserManagement = () => {
   );
 };
 
-// Create User Form Component
-const CreateUserForm = ({ onClose, onSuccess }) => {
+// User Form Component (Create/Edit)
+const UserForm = ({ user, onClose, onSubmit, title }) => {
   const { t } = useContext(LanguageContext);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+    name: user?.name || '',
+    email: user?.email || '',
     password: '',
-    role: 'student'
+    role: user?.role || 'student'
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    onSuccess(formData);
+    onSubmit(formData);
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white p-6 rounded-2xl w-full max-w-md">
-        <h3 className="text-xl font-bold mb-4 text-gray-800">{t('create')} {t('users')}</h3>
+      <div className="bg-white p-4 sm:p-6 rounded-2xl w-full max-w-md">
+        <h3 className="text-lg sm:text-xl font-bold mb-4 text-gray-800">{title}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
             placeholder={t('name')}
             value={formData.name}
             onChange={(e) => setFormData({...formData, name: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             required
           />
           <input
@@ -1439,21 +1700,21 @@ const CreateUserForm = ({ onClose, onSuccess }) => {
             placeholder={t('email')}
             value={formData.email}
             onChange={(e) => setFormData({...formData, email: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             required
           />
           <input
             type="password"
-            placeholder={t('password')}
+            placeholder={user ? "Leave blank to keep current password" : t('password')}
             value={formData.password}
             onChange={(e) => setFormData({...formData, password: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+            required={!user}
           />
           <select
             value={formData.role}
             onChange={(e) => setFormData({...formData, role: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
           >
             <option value="student">{t('student')}</option>
             <option value="supervisor">{t('supervisor')}</option>
@@ -1462,14 +1723,14 @@ const CreateUserForm = ({ onClose, onSuccess }) => {
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <button
               type="submit"
-              className="px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 font-medium"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 font-medium text-sm sm:text-base"
             >
-              {t('create')}
+              {user ? t('updateUser') : t('createUser')}
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-medium"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-medium text-sm sm:text-base"
             >
               {t('cancel')}
             </button>
