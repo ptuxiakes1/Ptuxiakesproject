@@ -873,7 +873,7 @@ const ChatModal = ({ requestId, onClose }) => {
           ))}
         </div>
         
-        <form onSubmit={sendMessage} className="flex space-x-2">
+        <form onSubmit={sendMessage} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
           <input
             type="text"
             value={newMessage}
