@@ -333,8 +333,8 @@ def test_enhanced_bidding_system(results: EnhancedTestResults):
     
     # Test bid status updates by admins
     if "admin" in results.tokens and "bid1_id" in results.test_data:
-        success, response, status = make_request("PUT", f"/bids/{results.test_data['bid1_id']}/status", 
-                                                params={"status": "accepted"}, token=results.tokens["admin"])
+        success, response, status = make_request("PUT", f"/bids/{results.test_data['bid1_id']}/status?status_value=accepted", 
+                                                token=results.tokens["admin"])
         if success:
             results.add_result("Admin Bid Status Update", True, "Admin successfully updated bid status")
             
