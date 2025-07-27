@@ -11,6 +11,9 @@ const LanguageContext = createContext();
 // Auth context
 const AuthContext = createContext();
 
+// System settings context
+const SystemSettingsContext = createContext();
+
 // Translation object
 const translations = {
   en: {
@@ -45,8 +48,7 @@ const translations = {
     accepted: "Accepted",
     rejected: "Rejected",
     price: "Price",
-    proposal: "Proposal",
-    estimatedCompletion: "Estimated Completion",
+    notes: "Notes",
     createBid: "Create Bid",
     sendMessage: "Send Message",
     message: "Message",
@@ -81,7 +83,28 @@ const translations = {
     userManagement: "User Management",
     createUser: "Create User",
     editUser: "Edit User",
-    updateUser: "Update User"
+    updateUser: "Update User",
+    forgotPassword: "Forgot Password?",
+    resetPassword: "Reset Password",
+    systemSettings: "System Settings",
+    siteTitle: "Site Title",
+    siteDescription: "Site Description",
+    headerColor: "Header Color",
+    headerTextColor: "Header Text Color",
+    metaKeywords: "Meta Keywords",
+    metaDescription: "Meta Description",
+    questions: "Questions",
+    askQuestion: "Ask Question",
+    questionTitle: "Question Title",
+    questionText: "Question",
+    category: "Category",
+    answer: "Answer",
+    answered: "Answered",
+    search: "Search",
+    filter: "Filter",
+    allCategories: "All Categories",
+    noResults: "No results found",
+    searchRequests: "Search requests..."
   },
   gr: {
     appTitle: "Σύστημα Υποβολής Προσφορών για Δοκίμια",
@@ -115,8 +138,7 @@ const translations = {
     accepted: "Αποδεκτό",
     rejected: "Απορρίφθηκε",
     price: "Τιμή",
-    proposal: "Πρόταση",
-    estimatedCompletion: "Εκτιμώμενη Ολοκλήρωση",
+    notes: "Σημειώσεις",
     createBid: "Δημιουργία Προσφοράς",
     sendMessage: "Αποστολή Μηνύματος",
     message: "Μήνυμα",
@@ -151,7 +173,28 @@ const translations = {
     userManagement: "Διαχείριση Χρηστών",
     createUser: "Δημιουργία Χρήστη",
     editUser: "Επεξεργασία Χρήστη",
-    updateUser: "Ενημέρωση Χρήστη"
+    updateUser: "Ενημέρωση Χρήστη",
+    forgotPassword: "Ξεχάσατε τον κωδικό;",
+    resetPassword: "Επαναφορά Κωδικού",
+    systemSettings: "Ρυθμίσεις Συστήματος",
+    siteTitle: "Τίτλος Ιστότοπου",
+    siteDescription: "Περιγραφή Ιστότοπου",
+    headerColor: "Χρώμα Κεφαλίδας",
+    headerTextColor: "Χρώμα Κειμένου Κεφαλίδας",
+    metaKeywords: "Λέξεις-Κλειδιά Meta",
+    metaDescription: "Περιγραφή Meta",
+    questions: "Ερωτήσεις",
+    askQuestion: "Κάντε Ερώτηση",
+    questionTitle: "Τίτλος Ερώτησης",
+    questionText: "Ερώτηση",
+    category: "Κατηγορία",
+    answer: "Απάντηση",
+    answered: "Απαντήθηκε",
+    search: "Αναζήτηση",
+    filter: "Φίλτρο",
+    allCategories: "Όλες οι Κατηγορίες",
+    noResults: "Δεν βρέθηκαν αποτελέσματα",
+    searchRequests: "Αναζήτηση αιτημάτων..."
   }
 };
 
@@ -179,6 +222,46 @@ const fieldsOfStudy = [
   "Arts",
   "Sciences"
 ];
+
+// Question categories
+const questionCategories = [
+  "general",
+  "technical",
+  "billing",
+  "account",
+  "support"
+];
+
+// System Settings Provider
+const SystemSettingsProvider = ({ children }) => {
+  const [systemSettings, setSystemSettings] = useState({
+    site_title: "Essay Bid Submission System",
+    site_description: "Professional essay writing and bidding platform",
+    header_color: "#1e3a8a",
+    header_text_color: "#ffffff",
+    meta_keywords: "essay, writing, academic, bidding, students, supervisors",
+    meta_description: "Professional essay writing and bidding platform connecting students with qualified supervisors"
+  });
+
+  const fetchSystemSettings = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/system-settings`);
+      setSystemSettings(response.data);
+    } catch (error) {
+      console.error('Error fetching system settings:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSystemSettings();
+  }, []);
+
+  return (
+    <SystemSettingsContext.Provider value={{ systemSettings, setSystemSettings, fetchSystemSettings }}>
+      {children}
+    </SystemSettingsContext.Provider>
+  );
+};
 
 // Auth Provider
 const AuthProvider = ({ children }) => {
@@ -283,6 +366,7 @@ const AuthForm = () => {
   const { login, register } = useContext(AuthContext);
   const { t } = useContext(LanguageContext);
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -300,6 +384,56 @@ const AuthForm = () => {
       alert(isLogin ? 'Login failed' : 'Registration failed');
     }
   };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/auth/forgot-password`, { email: formData.email });
+      alert('Password reset instructions sent to your email');
+      setShowForgotPassword(false);
+    } catch (error) {
+      alert('Error sending reset email');
+    }
+  };
+
+  if (showForgotPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-teal-50 p-4">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center">
+            <h2 className="mt-6 text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">
+              {t('resetPassword')}
+            </h2>
+          </div>
+          <form className="mt-8 space-y-6 bg-white p-6 sm:p-8 rounded-2xl shadow-xl" onSubmit={handleForgotPassword}>
+            <input
+              type="email"
+              placeholder={t('email')}
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
+              required
+            />
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+              <button
+                type="submit"
+                className="flex-1 py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+              >
+                {t('resetPassword')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowForgotPassword(false)}
+                className="flex-1 py-3 px-4 border border-gray-300 text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200"
+              >
+                {t('back')}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-teal-50 p-4">
@@ -360,7 +494,7 @@ const AuthForm = () => {
               {isLogin ? t('login') : t('register')}
             </button>
           </div>
-          <div className="text-center">
+          <div className="text-center space-y-2">
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
@@ -368,6 +502,17 @@ const AuthForm = () => {
             >
               {isLogin ? 'Χρειάζεστε να εγγραφείτε;' : 'Έχετε ήδη λογαριασμό;'}
             </button>
+            {isLogin && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-blue-600 hover:text-blue-500 transition-colors text-sm"
+                >
+                  {t('forgotPassword')}
+                </button>
+              </div>
+            )}
           </div>
         </form>
       </div>
@@ -379,6 +524,7 @@ const AuthForm = () => {
 const Navigation = () => {
   const { user, logout } = useContext(AuthContext);
   const { language, setLanguage, t } = useContext(LanguageContext);
+  const { systemSettings } = useContext(SystemSettingsContext);
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
@@ -397,16 +543,26 @@ const Navigation = () => {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
-    <nav className="bg-gradient-to-r from-blue-800 to-blue-900 text-white p-4 shadow-lg">
+    <nav 
+      className="text-white p-4 shadow-lg"
+      style={{ 
+        backgroundColor: systemSettings.header_color,
+        color: systemSettings.header_text_color 
+      }}
+    >
       <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
         <h1 className="text-lg sm:text-xl font-bold text-center sm:text-left leading-tight">
-          {t('appTitle')}
+          {systemSettings.site_title}
         </h1>
         <div className="flex items-center space-x-2 sm:space-x-4">
           <select
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
             className="px-3 py-2 bg-blue-700 text-white rounded-lg border border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+            style={{ 
+              backgroundColor: `${systemSettings.header_color}dd`,
+              borderColor: `${systemSettings.header_color}aa`
+            }}
           >
             <option value="gr">{t('greek')}</option>
             <option value="en">{t('english')}</option>
@@ -421,12 +577,27 @@ const Navigation = () => {
               </div>
             )}
           </div>
-          <button
-            onClick={logout}
-            className="px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition-colors text-sm"
-          >
-            {t('logout')}
-          </button>
+          {/* Mobile: Use logout icon instead of button */}
+          <div className="sm:hidden">
+            <button
+              onClick={logout}
+              className="p-2 bg-red-600 rounded-full hover:bg-red-700 transition-colors"
+              title={t('logout')}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
+          </div>
+          {/* Desktop: Use logout button */}
+          <div className="hidden sm:block">
+            <button
+              onClick={logout}
+              className="px-4 py-2 bg-red-600 rounded-lg hover:bg-red-700 transition-colors text-sm"
+            >
+              {t('logout')}
+            </button>
+          </div>
         </div>
       </div>
     </nav>
@@ -442,6 +613,7 @@ const Dashboard = () => {
   const [assignedRequests, setAssignedRequests] = useState([]);
   const [bids, setBids] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [questions, setQuestions] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -449,15 +621,17 @@ const Dashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [requestsRes, assignedRes, notificationsRes] = await Promise.all([
+      const [requestsRes, assignedRes, notificationsRes, questionsRes] = await Promise.all([
         axios.get(`${API}/requests`),
         axios.get(`${API}/requests/assigned`),
-        axios.get(`${API}/notifications`)
+        axios.get(`${API}/notifications`),
+        axios.get(`${API}/questions`)
       ]);
       
       setRequests(requestsRes.data);
       setAssignedRequests(assignedRes.data);
       setNotifications(notificationsRes.data);
+      setQuestions(questionsRes.data);
 
       // Fetch bids only for supervisors and admins
       if (user?.role === 'supervisor' || user?.role === 'admin') {
@@ -479,14 +653,18 @@ const Dashboard = () => {
         return <BidsView bids={bids} onRefresh={fetchData} />;
       case 'notifications':
         return <NotificationsView notifications={notifications} onRefresh={fetchData} />;
+      case 'questions':
+        return <QuestionsView questions={questions} onRefresh={fetchData} />;
       case 'settings':
         return user?.role === 'admin' ? <AdminSettings /> : <div>Access denied</div>;
+      case 'systemSettings':
+        return user?.role === 'admin' ? <SystemSettings /> : <div>Access denied</div>;
       case 'users':
         return user?.role === 'admin' ? <UserManagement /> : <div>Access denied</div>;
       case 'pendingMessages':
         return user?.role === 'admin' ? <PendingMessages /> : <div>Access denied</div>;
       default:
-        return <DashboardHome requests={requests} assignedRequests={assignedRequests} bids={bids} notifications={notifications} />;
+        return <DashboardHome requests={requests} assignedRequests={assignedRequests} bids={bids} notifications={notifications} questions={questions} />;
     }
   };
 
@@ -526,6 +704,12 @@ const Dashboard = () => {
                 </button>
               )}
               <button
+                onClick={() => setCurrentView('questions')}
+                className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'questions' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
+              >
+                {t('questions')}
+              </button>
+              <button
                 onClick={() => setCurrentView('notifications')}
                 className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'notifications' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'} relative`}
               >
@@ -551,6 +735,12 @@ const Dashboard = () => {
                     {t('settings')}
                   </button>
                   <button
+                    onClick={() => setCurrentView('systemSettings')}
+                    className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'systemSettings' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
+                  >
+                    {t('systemSettings')}
+                  </button>
+                  <button
                     onClick={() => setCurrentView('users')}
                     className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'users' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
                   >
@@ -570,7 +760,7 @@ const Dashboard = () => {
 };
 
 // Dashboard Home Component
-const DashboardHome = ({ requests, assignedRequests, bids, notifications }) => {
+const DashboardHome = ({ requests, assignedRequests, bids, notifications, questions }) => {
   const { user } = useContext(AuthContext);
   const { t } = useContext(LanguageContext);
 
@@ -578,13 +768,14 @@ const DashboardHome = ({ requests, assignedRequests, bids, notifications }) => {
     totalRequests: requests.length,
     assignedRequests: assignedRequests.length,
     totalBids: bids.length,
-    unreadNotifications: notifications.filter(n => !n.read).length
+    unreadNotifications: notifications.filter(n => !n.read).length,
+    pendingQuestions: questions.filter(q => q.status === 'pending').length
   };
 
   return (
     <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
       <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">{t('dashboard')}</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-4 sm:p-6 rounded-xl shadow-sm border border-blue-200">
           <h3 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">{t('essayRequests')}</h3>
           <p className="text-2xl sm:text-3xl font-bold text-blue-600">{stats.totalRequests}</p>
@@ -597,6 +788,10 @@ const DashboardHome = ({ requests, assignedRequests, bids, notifications }) => {
           <h3 className="font-semibold text-green-800 mb-2 text-sm sm:text-base">{t('bids')}</h3>
           <p className="text-2xl sm:text-3xl font-bold text-green-600">{stats.totalBids}</p>
         </div>
+        <div className="bg-gradient-to-br from-purple-100 to-purple-200 p-4 sm:p-6 rounded-xl shadow-sm border border-purple-200">
+          <h3 className="font-semibold text-purple-800 mb-2 text-sm sm:text-base">{t('questions')}</h3>
+          <p className="text-2xl sm:text-3xl font-bold text-purple-600">{stats.pendingQuestions}</p>
+        </div>
         <div className="bg-gradient-to-br from-red-100 to-red-200 p-4 sm:p-6 rounded-xl shadow-sm border border-red-200">
           <h3 className="font-semibold text-red-800 mb-2 text-sm sm:text-base">{t('notifications')}</h3>
           <p className="text-2xl sm:text-3xl font-bold text-red-600">{stats.unreadNotifications}</p>
@@ -606,12 +801,64 @@ const DashboardHome = ({ requests, assignedRequests, bids, notifications }) => {
   );
 };
 
-// Essay Requests View Component
+// Essay Requests View Component with Search and Filter
 const EssayRequestsView = ({ requests, onRefresh }) => {
   const { user } = useContext(AuthContext);
   const { t } = useContext(LanguageContext);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [categories, setCategories] = useState([]);
+  const [filteredRequests, setFilteredRequests] = useState([]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
+    filterRequests();
+  }, [requests, searchTerm, selectedCategory]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${API}/categories`);
+      setCategories(response.data.categories);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const filterRequests = () => {
+    let filtered = requests;
+
+    if (searchTerm) {
+      filtered = filtered.filter(request => 
+        request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.field_of_study.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.assignment_type.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (selectedCategory) {
+      filtered = filtered.filter(request => request.field_of_study === selectedCategory);
+    }
+
+    setFilteredRequests(filtered);
+  };
+
+  const handleSearch = async () => {
+    try {
+      const params = {};
+      if (searchTerm) params.search = searchTerm;
+      if (selectedCategory) params.category = selectedCategory;
+      
+      const response = await axios.get(`${API}/requests`, { params });
+      onRefresh();
+    } catch (error) {
+      console.error('Error searching requests:', error);
+    }
+  };
 
   return (
     <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
@@ -626,6 +873,41 @@ const EssayRequestsView = ({ requests, onRefresh }) => {
           </button>
         )}
       </div>
+
+      {/* Search and Filter Section */}
+      {(user?.role === 'supervisor' || user?.role === 'admin') && (
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder={t('searchRequests')}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+              />
+            </div>
+            <div className="flex-1 sm:flex-none sm:w-48">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+              >
+                <option value="">{t('allCategories')}</option>
+                {categories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={handleSearch}
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 text-sm sm:text-base"
+            >
+              {t('search')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {showCreateForm && (
         <CreateRequestForm
@@ -646,15 +928,315 @@ const EssayRequestsView = ({ requests, onRefresh }) => {
       )}
 
       <div className="space-y-4">
-        {requests.map((request) => (
-          <RequestCard 
-            key={request.id} 
-            request={request} 
-            onRefresh={onRefresh}
-            onViewDetails={() => setSelectedRequest(request)}
-          />
+        {(user?.role === 'supervisor' || user?.role === 'admin' ? filteredRequests : requests).length === 0 ? (
+          <div className="text-center text-gray-500 py-8">{t('noResults')}</div>
+        ) : (
+          (user?.role === 'supervisor' || user?.role === 'admin' ? filteredRequests : requests).map((request) => (
+            <RequestCard 
+              key={request.id} 
+              request={request} 
+              onRefresh={onRefresh}
+              onViewDetails={() => setSelectedRequest(request)}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Questions View Component
+const QuestionsView = ({ questions, onRefresh }) => {
+  const { user } = useContext(AuthContext);
+  const { t } = useContext(LanguageContext);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [answerForm, setAnswerForm] = useState({ questionId: null, answer: '' });
+
+  const handleAnswerQuestion = async (questionId, answer) => {
+    try {
+      await axios.put(`${API}/admin/questions/${questionId}/answer`, { answer });
+      onRefresh();
+      setAnswerForm({ questionId: null, answer: '' });
+    } catch (error) {
+      console.error('Error answering question:', error);
+    }
+  };
+
+  return (
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-4 sm:space-y-0">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{t('questions')}</h2>
+        {(user?.role === 'student' || user?.role === 'supervisor') && (
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg font-medium text-sm sm:text-base"
+          >
+            {t('askQuestion')}
+          </button>
+        )}
+      </div>
+
+      {showCreateForm && (
+        <CreateQuestionForm
+          onClose={() => setShowCreateForm(false)}
+          onSuccess={() => {
+            setShowCreateForm(false);
+            onRefresh();
+          }}
+        />
+      )}
+
+      <div className="space-y-4">
+        {questions.map((question) => (
+          <div key={question.id} className="border border-gray-200 rounded-xl p-4 sm:p-6 hover:shadow-md transition-shadow">
+            <div className="flex flex-col sm:flex-row justify-between items-start mb-4 space-y-2 sm:space-y-0">
+              <h3 className="font-semibold text-base sm:text-lg text-gray-800">{question.title}</h3>
+              <span className={`px-3 py-1 rounded-full text-xs sm:text-sm ${
+                question.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                question.status === 'answered' ? 'bg-green-100 text-green-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {t(question.status)}
+              </span>
+            </div>
+            <p className="text-gray-600 mb-4 text-sm sm:text-base">{question.question}</p>
+            
+            {question.answer && (
+              <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                <h4 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">{t('answer')}:</h4>
+                <p className="text-blue-700 text-sm sm:text-base">{question.answer}</p>
+              </div>
+            )}
+            
+            {user?.role === 'admin' && question.status === 'pending' && (
+              <div className="border-t pt-4">
+                {answerForm.questionId === question.id ? (
+                  <div className="space-y-2">
+                    <textarea
+                      value={answerForm.answer}
+                      onChange={(e) => setAnswerForm({...answerForm, answer: e.target.value})}
+                      placeholder={t('answer')}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                      rows="3"
+                    />
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+                      <button
+                        onClick={() => handleAnswerQuestion(question.id, answerForm.answer)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base"
+                      >
+                        {t('submit')}
+                      </button>
+                      <button
+                        onClick={() => setAnswerForm({ questionId: null, answer: '' })}
+                        className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm sm:text-base"
+                      >
+                        {t('cancel')}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setAnswerForm({ questionId: question.id, answer: '' })}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+                  >
+                    {t('answer')}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         ))}
       </div>
+    </div>
+  );
+};
+
+// Create Question Form Component
+const CreateQuestionForm = ({ onClose, onSuccess }) => {
+  const { t } = useContext(LanguageContext);
+  const [formData, setFormData] = useState({
+    title: '',
+    question: '',
+    category: 'general'
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API}/questions`, formData);
+      onSuccess();
+    } catch (error) {
+      console.error('Error creating question:', error);
+      alert('Error creating question');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white p-4 sm:p-6 rounded-2xl w-full max-w-md">
+        <h3 className="text-lg sm:text-xl font-bold mb-4 text-gray-800">{t('askQuestion')}</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            placeholder={t('questionTitle')}
+            value={formData.title}
+            onChange={(e) => setFormData({...formData, title: e.target.value})}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+            required
+          />
+          <select
+            value={formData.category}
+            onChange={(e) => setFormData({...formData, category: e.target.value})}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+          >
+            {questionCategories.map(category => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+          <textarea
+            placeholder={t('questionText')}
+            value={formData.question}
+            onChange={(e) => setFormData({...formData, question: e.target.value})}
+            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+            rows="4"
+            required
+          />
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            <button
+              type="submit"
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 font-medium text-sm sm:text-base"
+            >
+              {t('submit')}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 sm:px-6 py-2 sm:py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-medium text-sm sm:text-base"
+            >
+              {t('cancel')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// System Settings Component
+const SystemSettings = () => {
+  const { t } = useContext(LanguageContext);
+  const { systemSettings, fetchSystemSettings } = useContext(SystemSettingsContext);
+  const [settings, setSettings] = useState(systemSettings);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setSettings(systemSettings);
+  }, [systemSettings]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await axios.put(`${API}/admin/system-settings`, settings);
+      await fetchSystemSettings();
+      alert('System settings updated successfully');
+    } catch (error) {
+      console.error('Error updating system settings:', error);
+      alert('Error updating system settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">{t('systemSettings')}</h2>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('siteTitle')}
+            </label>
+            <input
+              type="text"
+              value={settings.site_title}
+              onChange={(e) => setSettings({...settings, site_title: e.target.value})}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('siteDescription')}
+            </label>
+            <input
+              type="text"
+              value={settings.site_description}
+              onChange={(e) => setSettings({...settings, site_description: e.target.value})}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('headerColor')}
+            </label>
+            <input
+              type="color"
+              value={settings.header_color}
+              onChange={(e) => setSettings({...settings, header_color: e.target.value})}
+              className="w-full h-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('headerTextColor')}
+            </label>
+            <input
+              type="color"
+              value={settings.header_text_color}
+              onChange={(e) => setSettings({...settings, header_text_color: e.target.value})}
+              className="w-full h-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('metaKeywords')}
+            </label>
+            <input
+              type="text"
+              value={settings.meta_keywords}
+              onChange={(e) => setSettings({...settings, meta_keywords: e.target.value})}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+            />
+          </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('metaDescription')}
+            </label>
+            <textarea
+              value={settings.meta_description}
+              onChange={(e) => setSettings({...settings, meta_description: e.target.value})}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+              rows="3"
+            />
+          </div>
+        </div>
+        
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg font-medium text-sm sm:text-base disabled:opacity-50"
+          >
+            {loading ? 'Saving...' : t('save')}
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
@@ -921,7 +1503,7 @@ const RequestDetailsModal = ({ request, onClose, onRefresh }) => {
                         {t(bid.status)}
                       </span>
                     </div>
-                    <p className="text-xs sm:text-sm text-gray-600 mb-2">{bid.proposal}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-2">{bid.notes}</p>
                     {bid.status === 'pending' && (
                       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                         <button
@@ -1141,13 +1723,12 @@ const RequestCard = ({ request, onRefresh, onViewDetails }) => {
   );
 };
 
-// Create Bid Form Component
+// Create Bid Form Component (Updated - removed time requirement)
 const CreateBidForm = ({ requestId, onClose, onSuccess }) => {
   const { t } = useContext(LanguageContext);
   const [formData, setFormData] = useState({
     price: '',
-    estimated_completion: '',
-    proposal: ''
+    notes: ''
   });
 
   const handleSubmit = async (e) => {
@@ -1156,8 +1737,7 @@ const CreateBidForm = ({ requestId, onClose, onSuccess }) => {
       const submitData = {
         ...formData,
         request_id: requestId,
-        price: parseFloat(formData.price),
-        estimated_completion: new Date(formData.estimated_completion).toISOString()
+        price: parseFloat(formData.price)
       };
 
       await axios.post(`${API}/bids`, submitData);
@@ -1182,17 +1762,10 @@ const CreateBidForm = ({ requestId, onClose, onSuccess }) => {
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             required
           />
-          <input
-            type="datetime-local"
-            value={formData.estimated_completion}
-            onChange={(e) => setFormData({...formData, estimated_completion: e.target.value})}
-            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-            required
-          />
           <textarea
-            placeholder={t('proposal')}
-            value={formData.proposal}
-            onChange={(e) => setFormData({...formData, proposal: e.target.value})}
+            placeholder={t('notes')}
+            value={formData.notes}
+            onChange={(e) => setFormData({...formData, notes: e.target.value})}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
             rows="4"
             required
@@ -1388,7 +1961,7 @@ const BidsView = ({ bids, onRefresh }) => {
             <div className="flex flex-col sm:flex-row justify-between items-start mb-4 space-y-2 sm:space-y-0">
               <div>
                 <p className="font-semibold text-base sm:text-lg text-gray-800">{t('price')}: ${bid.price}</p>
-                <p className="text-gray-600 text-sm sm:text-base">{t('estimatedCompletion')}: {new Date(bid.estimated_completion).toLocaleDateString()}</p>
+                <p className="text-gray-600 text-sm sm:text-base">Created: {new Date(bid.created_at).toLocaleDateString()}</p>
               </div>
               <span className={`px-3 py-1 rounded-full text-xs sm:text-sm border ${
                 bid.status === 'pending' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' :
@@ -1398,7 +1971,7 @@ const BidsView = ({ bids, onRefresh }) => {
                 {t(bid.status)}
               </span>
             </div>
-            <p className="text-gray-700 mb-4 text-sm sm:text-base">{bid.proposal}</p>
+            <p className="text-gray-700 mb-4 text-sm sm:text-base">{bid.notes}</p>
           </div>
         ))}
       </div>
@@ -1756,9 +2329,11 @@ function App() {
 function AppWithProviders() {
   return (
     <LanguageProvider>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <SystemSettingsProvider>
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      </SystemSettingsProvider>
     </LanguageProvider>
   );
 }
