@@ -91,6 +91,18 @@ class BidCreate(BaseModel):
     estimated_completion: datetime
     proposal: str
 
+class AdminPrice(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    request_id: str
+    price: float
+    set_by_admin: str
+    visible_to_student: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class AdminPriceCreate(BaseModel):
+    request_id: str
+    price: float
+
 class ChatMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     request_id: str
@@ -99,6 +111,9 @@ class ChatMessage(BaseModel):
     message: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     read: bool = False
+    approved: bool = False
+    approved_by: Optional[str] = None
+    approved_at: Optional[datetime] = None
 
 class ChatMessageCreate(BaseModel):
     request_id: str
