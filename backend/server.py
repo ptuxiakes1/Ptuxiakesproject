@@ -285,16 +285,35 @@ async def create_essay_request(request_data: EssayRequestCreate, current_user: U
     return essay_request
 
 @api_router.get("/requests", response_model=List[EssayRequest])
-async def get_essay_requests(current_user: User = Depends(get_current_user)):
+async def get_essay_requests(
+    search: Optional[str] = None,
+    category: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    query = {}
+    
     if current_user.role == "student":
         # Students can only see their own requests
-        requests = await db.essay_requests.find({"student_id": current_user.id}).to_list(None)
+        query["student_id"] = current_user.id
     elif current_user.role == "supervisor":
         # Supervisors can see all pending requests
-        requests = await db.essay_requests.find({"status": "pending"}).to_list(None)
-    else:  # admin
-        # Admins can see all requests
-        requests = await db.essay_requests.find().to_list(None)
+        query["status"] = "pending"
+    # Admins can see all requests (no additional filter)
+    
+    # Add search filter
+    if search:
+        query["$or"] = [
+            {"title": {"$regex": search, "$options": "i"}},
+            {"field_of_study": {"$regex": search, "$options": "i"}},
+            {"assignment_type": {"$regex": search, "$options": "i"}}
+        ]
+    
+    # Add category filter
+    if category:
+        query["field_of_study"] = category
+    
+    # Get requests and sort by latest first
+    requests = await db.essay_requests.find(query).sort("created_at", -1).to_list(None)
     
     return [EssayRequest(**request) for request in requests]
 
