@@ -593,10 +593,57 @@ async def get_all_users(current_user: User = Depends(admin_only)):
     users = await db.users.find().to_list(None)
     return [User(**user) for user in users]
 
+@api_router.post("/admin/users", response_model=User)
+async def create_user(user_data: UserCreate, current_user: User = Depends(admin_only)):
+    # Check if user already exists
+    existing_user = await db.users.find_one({"email": user_data.email})
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
+    
+    # Create new user
+    user_dict = user_data.dict()
+    user_dict["password_hash"] = hash_password(user_data.password)
+    del user_dict["password"]
+    
+    user = User(**user_dict)
+    await db.users.insert_one(user.dict())
+    
+    return user
+
+@api_router.put("/admin/users/{user_id}")
+async def update_user(user_id: str, user_data: UserCreate, current_user: User = Depends(admin_only)):
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Update user data
+    update_data = user_data.dict()
+    if update_data.get("password"):
+        update_data["password_hash"] = hash_password(update_data["password"])
+        del update_data["password"]
+    
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "User updated successfully"}
+
 @api_router.delete("/admin/users/{user_id}")
 async def delete_user(user_id: str, current_user: User = Depends(admin_only)):
     await db.users.delete_one({"id": user_id})
     return {"message": "User deleted successfully"}
+
+@api_router.get("/admin/supervisors", response_model=List[User])
+async def get_all_supervisors(current_user: User = Depends(admin_only)):
+    supervisors = await db.users.find({"role": "supervisor"}).to_list(None)
+    return [User(**supervisor) for supervisor in supervisors]
 
 # File upload
 @api_router.post("/upload")
