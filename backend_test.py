@@ -341,7 +341,7 @@ def test_bidding_system(results: TestResults):
     
     # Test bid permissions - non-admin trying to update status
     if "supervisor" in results.tokens and "bid_id" in results.test_data:
-        success, response, status = make_request("PUT", f"/bids/{results.test_data['bid_id']}/status?status=pending", token=results.tokens["supervisor"])
+        success, response, status = make_request("PUT", f"/bids/{results.test_data['bid_id']}/status", {"status": "pending"}, results.tokens["supervisor"])
         if not success and status == 403:
             results.add_result("Bid Status Update Permission", True, "Correctly prevented non-admin from updating bid status")
         else:
@@ -349,7 +349,7 @@ def test_bidding_system(results: TestResults):
     
     # Test bid validation - invalid status
     if "admin" in results.tokens and "bid_id" in results.test_data:
-        success, response, status = make_request("PUT", f"/bids/{results.test_data['bid_id']}/status?status=invalid_status", token=results.tokens["admin"])
+        success, response, status = make_request("PUT", f"/bids/{results.test_data['bid_id']}/status", {"status": "invalid_status"}, results.tokens["admin"])
         if not success and status == 400:
             results.add_result("Bid Status Validation", True, "Correctly validated bid status values")
         else:
