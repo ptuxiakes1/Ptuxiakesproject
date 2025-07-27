@@ -614,8 +614,10 @@ def test_chat_system(results: TestResults):
     
     # Test chat access permissions
     # Create another student to test access restrictions
+    import time
+    timestamp = str(int(time.time()))
     other_student_data = {
-        "email": "other.student@university.gr",
+        "email": f"other.student.{timestamp}@university.gr",
         "name": "Other Student",
         "password": "OtherPass123!",
         "role": "student"
