@@ -528,8 +528,10 @@ def test_user_management(results: TestResults):
             results.add_result("User Listing Access Control", False, "Should restrict non-admin access to user listing", response)
     
     # Test user deletion (create a test user first)
+    import time
+    timestamp = str(int(time.time()))
     test_user_data = {
-        "email": "test.deletion@university.gr",
+        "email": f"test.deletion.{timestamp}@university.gr",
         "name": "Test Deletion User",
         "password": "TestPass123!",
         "role": "student"
