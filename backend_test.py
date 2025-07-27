@@ -550,7 +550,7 @@ def test_user_management(results: TestResults):
             success, response, status = make_request("GET", "/admin/users", token=results.tokens["admin"])
             if success:
                 remaining_emails = [user.get("email") for user in response]
-                if "test.deletion@university.gr" not in remaining_emails:
+                if test_user_data["email"] not in remaining_emails:
                     results.add_result("User Deletion Verification", True, "User successfully removed from system")
                 else:
                     results.add_result("User Deletion Verification", False, "User still exists after deletion")
