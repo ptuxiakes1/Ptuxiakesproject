@@ -1,54 +1,1183 @@
-import { useEffect } from "react";
-import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import React, { useState, useEffect, createContext, useContext } from 'react';
+import './App.css';
+import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const Home = () => {
-  const helloWorldApi = async () => {
+// Language context
+const LanguageContext = createContext();
+
+// Auth context
+const AuthContext = createContext();
+
+// Translation object
+const translations = {
+  en: {
+    appTitle: "Essay Bid Submission System",
+    login: "Login",
+    register: "Register",
+    email: "Email",
+    password: "Password",
+    name: "Name",
+    role: "Role",
+    student: "Student",
+    supervisor: "Supervisor",
+    admin: "Admin",
+    dashboard: "Dashboard",
+    essayRequests: "Essay Requests",
+    bids: "Bids",
+    chat: "Chat",
+    notifications: "Notifications",
+    settings: "Settings",
+    logout: "Logout",
+    createRequest: "Create New Request",
+    title: "Title",
+    dueDate: "Due Date",
+    wordCount: "Word Count",
+    assignmentType: "Assignment Type",
+    fieldOfStudy: "Field of Study",
+    extraInfo: "Extra Information",
+    submit: "Submit",
+    cancel: "Cancel",
+    pending: "Pending",
+    accepted: "Accepted",
+    rejected: "Rejected",
+    price: "Price",
+    proposal: "Proposal",
+    estimatedCompletion: "Estimated Completion",
+    createBid: "Create Bid",
+    sendMessage: "Send Message",
+    message: "Message",
+    adminSettings: "Admin Settings",
+    googleOAuth: "Google OAuth",
+    emergentAuth: "Emergent Auth",
+    emailNotifications: "Email Notifications",
+    enabled: "Enabled",
+    disabled: "Disabled",
+    save: "Save",
+    users: "Users",
+    delete: "Delete",
+    language: "Language",
+    english: "English",
+    greek: "Greek"
+  },
+  gr: {
+    appTitle: "Σύστημα Υποβολής Προσφορών για Δοκίμια",
+    login: "Σύνδεση",
+    register: "Εγγραφή",
+    email: "Email",
+    password: "Κωδικός",
+    name: "Όνομα",
+    role: "Ρόλος",
+    student: "Φοιτητής",
+    supervisor: "Επιβλέπων",
+    admin: "Διαχειριστής",
+    dashboard: "Πίνακας Ελέγχου",
+    essayRequests: "Αιτήματα Δοκιμίων",
+    bids: "Προσφορές",
+    chat: "Συνομιλία",
+    notifications: "Ειδοποιήσεις",
+    settings: "Ρυθμίσεις",
+    logout: "Αποσύνδεση",
+    createRequest: "Δημιουργία Νέου Αιτήματος",
+    title: "Τίτλος",
+    dueDate: "Ημερομηνία Παράδοσης",
+    wordCount: "Αριθμός Λέξεων",
+    assignmentType: "Τύπος Εργασίας",
+    fieldOfStudy: "Πεδίο Μελέτης",
+    extraInfo: "Επιπλέον Πληροφορίες",
+    submit: "Υποβολή",
+    cancel: "Ακύρωση",
+    pending: "Σε Αναμονή",
+    accepted: "Αποδεκτό",
+    rejected: "Απορρίφθηκε",
+    price: "Τιμή",
+    proposal: "Πρόταση",
+    estimatedCompletion: "Εκτιμώμενη Ολοκλήρωση",
+    createBid: "Δημιουργία Προσφοράς",
+    sendMessage: "Αποστολή Μηνύματος",
+    message: "Μήνυμα",
+    adminSettings: "Ρυθμίσεις Διαχειριστή",
+    googleOAuth: "Google OAuth",
+    emergentAuth: "Emergent Auth",
+    emailNotifications: "Ειδοποιήσεις Email",
+    enabled: "Ενεργοποιημένο",
+    disabled: "Απενεργοποιημένο",
+    save: "Αποθήκευση",
+    users: "Χρήστες",
+    delete: "Διαγραφή",
+    language: "Γλώσσα",
+    english: "Αγγλικά",
+    greek: "Ελληνικά"
+  }
+};
+
+// Assignment types
+const assignmentTypes = {
+  essay: "Essay",
+  dissertation_qualitative: "Dissertation (Qualitative)",
+  dissertation_quantitative: "Dissertation (Quantitative)",
+  statistical_analysis: "Statistical Analysis",
+  paraphrase: "Paraphrase",
+  ai_detection: "AI Detection",
+  translation: "Translation"
+};
+
+// Fields of study
+const fieldsOfStudy = [
+  "Engineering",
+  "Computer Science",
+  "Business",
+  "Literature",
+  "Psychology",
+  "Medicine",
+  "Law",
+  "Education",
+  "Arts",
+  "Sciences"
+];
+
+// Auth Provider
+const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      fetchUser();
+    } else {
+      setLoading(false);
+    }
+  }, [token]);
+
+  const fetchUser = async () => {
     try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
+      const response = await axios.get(`${API}/auth/me`);
+      setUser(response.data);
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      logout();
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    helloWorldApi();
-  }, []);
+  const login = async (email, password) => {
+    try {
+      const response = await axios.post(`${API}/auth/login`, { email, password });
+      const { token: newToken, user: userData } = response.data;
+      
+      setToken(newToken);
+      setUser(userData);
+      localStorage.setItem('token', newToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      
+      return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
+  };
+
+  const register = async (userData) => {
+    try {
+      const response = await axios.post(`${API}/auth/register`, userData);
+      const { token: newToken, user: newUser } = response.data;
+      
+      setToken(newToken);
+      setUser(newUser);
+      localStorage.setItem('token', newToken);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      
+      return true;
+    } catch (error) {
+      console.error('Registration error:', error);
+      return false;
+    }
+  };
+
+  const logout = () => {
+    setToken(null);
+    setUser(null);
+    localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
+    <AuthContext.Provider value={{ user, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+// Language Provider
+const LanguageProvider = ({ children }) => {
+  const [language, setLanguage] = useState('en');
+
+  const t = (key) => {
+    return translations[language][key] || key;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};
+
+// Login/Register Component
+const AuthForm = () => {
+  const { login, register } = useContext(AuthContext);
+  const { t } = useContext(LanguageContext);
+  const [isLogin, setIsLogin] = useState(true);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: '',
+    role: 'student'
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const success = isLogin 
+      ? await login(formData.email, formData.password)
+      : await register(formData);
+    
+    if (!success) {
+      alert(isLogin ? 'Login failed' : 'Registration failed');
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            {t('appTitle')}
+          </h2>
+          <p className="mt-2 text-center text-sm text-gray-600">
+            {isLogin ? t('login') : t('register')}
+          </p>
+        </div>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            {!isLogin && (
+              <input
+                type="text"
+                placeholder={t('name')}
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            )}
+            <input
+              type="email"
+              placeholder={t('email')}
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            <input
+              type="password"
+              placeholder={t('password')}
+              value={formData.password}
+              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            {!isLogin && (
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData({...formData, role: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="student">{t('student')}</option>
+                <option value="supervisor">{t('supervisor')}</option>
+                <option value="admin">{t('admin')}</option>
+              </select>
+            )}
+          </div>
+          <div>
+            <button
+              type="submit"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              {isLogin ? t('login') : t('register')}
+            </button>
+          </div>
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-blue-600 hover:text-blue-500"
+            >
+              {isLogin ? 'Need to register?' : 'Already have an account?'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
 
+// Navigation Component
+const Navigation = () => {
+  const { user, logout } = useContext(AuthContext);
+  const { language, setLanguage, t } = useContext(LanguageContext);
+
+  return (
+    <nav className="bg-blue-600 text-white p-4">
+      <div className="container mx-auto flex justify-between items-center">
+        <h1 className="text-xl font-bold">{t('appTitle')}</h1>
+        <div className="flex items-center space-x-4">
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="px-2 py-1 bg-blue-700 text-white rounded"
+          >
+            <option value="en">{t('english')}</option>
+            <option value="gr">{t('greek')}</option>
+          </select>
+          <span>Welcome, {user?.name}</span>
+          <button
+            onClick={logout}
+            className="px-4 py-2 bg-red-600 rounded hover:bg-red-700"
+          >
+            {t('logout')}
+          </button>
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+// Dashboard Component
+const Dashboard = () => {
+  const { user } = useContext(AuthContext);
+  const { t } = useContext(LanguageContext);
+  const [currentView, setCurrentView] = useState('dashboard');
+  const [requests, setRequests] = useState([]);
+  const [bids, setBids] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [requestsRes, bidsRes, notificationsRes] = await Promise.all([
+        axios.get(`${API}/requests`),
+        axios.get(`${API}/bids`),
+        axios.get(`${API}/notifications`)
+      ]);
+      
+      setRequests(requestsRes.data);
+      setBids(bidsRes.data);
+      setNotifications(notificationsRes.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  const renderContent = () => {
+    switch (currentView) {
+      case 'requests':
+        return <EssayRequestsView requests={requests} onRefresh={fetchData} />;
+      case 'bids':
+        return <BidsView bids={bids} onRefresh={fetchData} />;
+      case 'notifications':
+        return <NotificationsView notifications={notifications} onRefresh={fetchData} />;
+      case 'settings':
+        return user?.role === 'admin' ? <AdminSettings /> : <div>Access denied</div>;
+      case 'users':
+        return user?.role === 'admin' ? <UserManagement /> : <div>Access denied</div>;
+      default:
+        return <DashboardHome requests={requests} bids={bids} notifications={notifications} />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <Navigation />
+      <div className="container mx-auto p-4">
+        <div className="flex">
+          <div className="w-1/4 bg-white p-4 rounded-lg shadow mr-4">
+            <nav className="space-y-2">
+              <button
+                onClick={() => setCurrentView('dashboard')}
+                className={`w-full text-left px-4 py-2 rounded ${currentView === 'dashboard' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
+              >
+                {t('dashboard')}
+              </button>
+              <button
+                onClick={() => setCurrentView('requests')}
+                className={`w-full text-left px-4 py-2 rounded ${currentView === 'requests' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
+              >
+                {t('essayRequests')}
+              </button>
+              <button
+                onClick={() => setCurrentView('bids')}
+                className={`w-full text-left px-4 py-2 rounded ${currentView === 'bids' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
+              >
+                {t('bids')}
+              </button>
+              <button
+                onClick={() => setCurrentView('notifications')}
+                className={`w-full text-left px-4 py-2 rounded ${currentView === 'notifications' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
+              >
+                {t('notifications')} {notifications.filter(n => !n.read).length > 0 && <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs ml-2">{notifications.filter(n => !n.read).length}</span>}
+              </button>
+              {user?.role === 'admin' && (
+                <>
+                  <button
+                    onClick={() => setCurrentView('settings')}
+                    className={`w-full text-left px-4 py-2 rounded ${currentView === 'settings' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
+                  >
+                    {t('settings')}
+                  </button>
+                  <button
+                    onClick={() => setCurrentView('users')}
+                    className={`w-full text-left px-4 py-2 rounded ${currentView === 'users' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
+                  >
+                    {t('users')}
+                  </button>
+                </>
+              )}
+            </nav>
+          </div>
+          <div className="w-3/4">
+            {renderContent()}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Dashboard Home Component
+const DashboardHome = ({ requests, bids, notifications }) => {
+  const { user } = useContext(AuthContext);
+  const { t } = useContext(LanguageContext);
+
+  const stats = {
+    totalRequests: requests.length,
+    pendingRequests: requests.filter(r => r.status === 'pending').length,
+    totalBids: bids.length,
+    unreadNotifications: notifications.filter(n => !n.read).length
+  };
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-2xl font-bold mb-6">{t('dashboard')}</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-blue-100 p-4 rounded-lg">
+          <h3 className="font-semibold text-blue-800">{t('essayRequests')}</h3>
+          <p className="text-2xl font-bold text-blue-600">{stats.totalRequests}</p>
+        </div>
+        <div className="bg-yellow-100 p-4 rounded-lg">
+          <h3 className="font-semibold text-yellow-800">{t('pending')}</h3>
+          <p className="text-2xl font-bold text-yellow-600">{stats.pendingRequests}</p>
+        </div>
+        <div className="bg-green-100 p-4 rounded-lg">
+          <h3 className="font-semibold text-green-800">{t('bids')}</h3>
+          <p className="text-2xl font-bold text-green-600">{stats.totalBids}</p>
+        </div>
+        <div className="bg-red-100 p-4 rounded-lg">
+          <h3 className="font-semibold text-red-800">{t('notifications')}</h3>
+          <p className="text-2xl font-bold text-red-600">{stats.unreadNotifications}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Essay Requests View Component
+const EssayRequestsView = ({ requests, onRefresh }) => {
+  const { user } = useContext(AuthContext);
+  const { t } = useContext(LanguageContext);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">{t('essayRequests')}</h2>
+        {user?.role === 'student' && (
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            {t('createRequest')}
+          </button>
+        )}
+      </div>
+
+      {showCreateForm && (
+        <CreateRequestForm
+          onClose={() => setShowCreateForm(false)}
+          onSuccess={() => {
+            setShowCreateForm(false);
+            onRefresh();
+          }}
+        />
+      )}
+
+      <div className="space-y-4">
+        {requests.map((request) => (
+          <RequestCard key={request.id} request={request} onRefresh={onRefresh} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Create Request Form Component
+const CreateRequestForm = ({ onClose, onSuccess }) => {
+  const { t } = useContext(LanguageContext);
+  const [formData, setFormData] = useState({
+    title: '',
+    due_date: '',
+    word_count: '',
+    assignment_type: 'essay',
+    field_of_study: '',
+    attachments: [],
+    extra_information: ''
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const submitData = {
+        ...formData,
+        due_date: new Date(formData.due_date).toISOString(),
+        word_count: parseInt(formData.word_count)
+      };
+
+      await axios.post(`${API}/requests`, submitData);
+      onSuccess();
+    } catch (error) {
+      console.error('Error creating request:', error);
+      alert('Error creating request');
+    }
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await axios.post(`${API}/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      setFormData(prev => ({
+        ...prev,
+        attachments: [...prev.attachments, response.data.data]
+      }));
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg max-w-md w-full max-h-96 overflow-y-auto">
+        <h3 className="text-xl font-bold mb-4">{t('createRequest')}</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            placeholder={t('title')}
+            value={formData.title}
+            onChange={(e) => setFormData({...formData, title: e.target.value})}
+            className="w-full px-3 py-2 border rounded"
+            required
+          />
+          <input
+            type="datetime-local"
+            value={formData.due_date}
+            onChange={(e) => setFormData({...formData, due_date: e.target.value})}
+            className="w-full px-3 py-2 border rounded"
+            required
+          />
+          <input
+            type="number"
+            placeholder={t('wordCount')}
+            value={formData.word_count}
+            onChange={(e) => setFormData({...formData, word_count: e.target.value})}
+            className="w-full px-3 py-2 border rounded"
+            required
+          />
+          <select
+            value={formData.assignment_type}
+            onChange={(e) => setFormData({...formData, assignment_type: e.target.value})}
+            className="w-full px-3 py-2 border rounded"
+          >
+            {Object.entries(assignmentTypes).map(([key, value]) => (
+              <option key={key} value={key}>{value}</option>
+            ))}
+          </select>
+          <select
+            value={formData.field_of_study}
+            onChange={(e) => setFormData({...formData, field_of_study: e.target.value})}
+            className="w-full px-3 py-2 border rounded"
+            required
+          >
+            <option value="">{t('fieldOfStudy')}</option>
+            {fieldsOfStudy.map(field => (
+              <option key={field} value={field}>{field}</option>
+            ))}
+          </select>
+          <input
+            type="file"
+            onChange={handleFileUpload}
+            className="w-full px-3 py-2 border rounded"
+          />
+          <textarea
+            placeholder={t('extraInfo')}
+            value={formData.extra_information}
+            onChange={(e) => setFormData({...formData, extra_information: e.target.value})}
+            className="w-full px-3 py-2 border rounded"
+            rows="3"
+          />
+          <div className="flex space-x-2">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              {t('submit')}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              {t('cancel')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Request Card Component
+const RequestCard = ({ request, onRefresh }) => {
+  const { user } = useContext(AuthContext);
+  const { t } = useContext(LanguageContext);
+  const [showBidForm, setShowBidForm] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+
+  const statusColor = {
+    pending: 'bg-yellow-100 text-yellow-800',
+    accepted: 'bg-green-100 text-green-800',
+    rejected: 'bg-red-100 text-red-800'
+  };
+
+  return (
+    <div className="border rounded-lg p-4">
+      <div className="flex justify-between items-start mb-2">
+        <h3 className="font-semibold text-lg">{request.title}</h3>
+        <span className={`px-2 py-1 rounded-full text-sm ${statusColor[request.status]}`}>
+          {t(request.status)}
+        </span>
+      </div>
+      <p className="text-gray-600 mb-2">
+        {assignmentTypes[request.assignment_type]} • {request.field_of_study} • {request.word_count} words
+      </p>
+      <p className="text-gray-500 mb-4">Due: {new Date(request.due_date).toLocaleDateString()}</p>
+      
+      <div className="flex space-x-2">
+        {user?.role === 'supervisor' && request.status === 'pending' && (
+          <button
+            onClick={() => setShowBidForm(true)}
+            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            {t('createBid')}
+          </button>
+        )}
+        {request.status === 'pending' && (
+          <button
+            onClick={() => setShowChat(true)}
+            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+          >
+            {t('chat')}
+          </button>
+        )}
+      </div>
+
+      {showBidForm && (
+        <CreateBidForm
+          requestId={request.id}
+          onClose={() => setShowBidForm(false)}
+          onSuccess={() => {
+            setShowBidForm(false);
+            onRefresh();
+          }}
+        />
+      )}
+
+      {showChat && (
+        <ChatModal
+          requestId={request.id}
+          onClose={() => setShowChat(false)}
+        />
+      )}
+    </div>
+  );
+};
+
+// Create Bid Form Component
+const CreateBidForm = ({ requestId, onClose, onSuccess }) => {
+  const { t } = useContext(LanguageContext);
+  const [formData, setFormData] = useState({
+    price: '',
+    estimated_completion: '',
+    proposal: ''
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const submitData = {
+        ...formData,
+        request_id: requestId,
+        price: parseFloat(formData.price),
+        estimated_completion: new Date(formData.estimated_completion).toISOString()
+      };
+
+      await axios.post(`${API}/bids`, submitData);
+      onSuccess();
+    } catch (error) {
+      console.error('Error creating bid:', error);
+      alert('Error creating bid');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg max-w-md w-full">
+        <h3 className="text-xl font-bold mb-4">{t('createBid')}</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="number"
+            step="0.01"
+            placeholder={t('price')}
+            value={formData.price}
+            onChange={(e) => setFormData({...formData, price: e.target.value})}
+            className="w-full px-3 py-2 border rounded"
+            required
+          />
+          <input
+            type="datetime-local"
+            value={formData.estimated_completion}
+            onChange={(e) => setFormData({...formData, estimated_completion: e.target.value})}
+            className="w-full px-3 py-2 border rounded"
+            required
+          />
+          <textarea
+            placeholder={t('proposal')}
+            value={formData.proposal}
+            onChange={(e) => setFormData({...formData, proposal: e.target.value})}
+            className="w-full px-3 py-2 border rounded"
+            rows="4"
+            required
+          />
+          <div className="flex space-x-2">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              {t('submit')}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              {t('cancel')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Chat Modal Component
+const ChatModal = ({ requestId, onClose }) => {
+  const { t } = useContext(LanguageContext);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+
+  useEffect(() => {
+    fetchMessages();
+  }, [requestId]);
+
+  const fetchMessages = async () => {
+    try {
+      const response = await axios.get(`${API}/chat/${requestId}`);
+      setMessages(response.data);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
+
+  const sendMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    try {
+      await axios.post(`${API}/chat/send`, {
+        request_id: requestId,
+        receiver_id: 'placeholder', // This would need to be properly implemented
+        message: newMessage
+      });
+      setNewMessage('');
+      fetchMessages();
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg max-w-md w-full h-96">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">{t('chat')}</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">✕</button>
+        </div>
+        
+        <div className="h-64 overflow-y-auto mb-4 border rounded p-2">
+          {messages.map((message) => (
+            <div key={message.id} className="mb-2 p-2 bg-gray-100 rounded">
+              <p className="text-sm font-semibold">{message.sender_id}</p>
+              <p>{message.message}</p>
+              <p className="text-xs text-gray-500">{new Date(message.timestamp).toLocaleString()}</p>
+            </div>
+          ))}
+        </div>
+        
+        <form onSubmit={sendMessage} className="flex space-x-2">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder={t('message')}
+            className="flex-1 px-3 py-2 border rounded"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            {t('sendMessage')}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Bids View Component
+const BidsView = ({ bids, onRefresh }) => {
+  const { user } = useContext(AuthContext);
+  const { t } = useContext(LanguageContext);
+
+  const handleBidStatusChange = async (bidId, status) => {
+    try {
+      await axios.put(`${API}/bids/${bidId}/status`, null, {
+        params: { status }
+      });
+      onRefresh();
+    } catch (error) {
+      console.error('Error updating bid status:', error);
+    }
+  };
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-2xl font-bold mb-6">{t('bids')}</h2>
+      <div className="space-y-4">
+        {bids.map((bid) => (
+          <div key={bid.id} className="border rounded-lg p-4">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <p className="font-semibold">{t('price')}: ${bid.price}</p>
+                <p className="text-gray-600">{t('estimatedCompletion')}: {new Date(bid.estimated_completion).toLocaleDateString()}</p>
+              </div>
+              <span className={`px-2 py-1 rounded-full text-sm ${
+                bid.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                bid.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                'bg-red-100 text-red-800'
+              }`}>
+                {t(bid.status)}
+              </span>
+            </div>
+            <p className="text-gray-700 mb-4">{bid.proposal}</p>
+            
+            {user?.role === 'admin' && bid.status === 'pending' && (
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleBidStatusChange(bid.id, 'accepted')}
+                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
+                >
+                  Accept
+                </button>
+                <button
+                  onClick={() => handleBidStatusChange(bid.id, 'rejected')}
+                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+                >
+                  Reject
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Notifications View Component
+const NotificationsView = ({ notifications, onRefresh }) => {
+  const { t } = useContext(LanguageContext);
+
+  const markAsRead = async (notificationId) => {
+    try {
+      await axios.put(`${API}/notifications/${notificationId}/read`);
+      onRefresh();
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-2xl font-bold mb-6">{t('notifications')}</h2>
+      <div className="space-y-4">
+        {notifications.map((notification) => (
+          <div
+            key={notification.id}
+            className={`border rounded-lg p-4 ${notification.read ? 'bg-gray-50' : 'bg-blue-50'}`}
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h3 className="font-semibold">{notification.title}</h3>
+                <p className="text-gray-600">{notification.message}</p>
+                <p className="text-xs text-gray-500 mt-2">
+                  {new Date(notification.created_at).toLocaleString()}
+                </p>
+              </div>
+              {!notification.read && (
+                <button
+                  onClick={() => markAsRead(notification.id)}
+                  className="text-blue-600 hover:text-blue-800"
+                >
+                  Mark as read
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Admin Settings Component
+const AdminSettings = () => {
+  const { t } = useContext(LanguageContext);
+  const [settings, setSettings] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/settings`);
+      setSettings(response.data);
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateSettings = async (updates) => {
+    try {
+      await axios.put(`${API}/admin/settings`, updates);
+      fetchSettings();
+    } catch (error) {
+      console.error('Error updating settings:', error);
+    }
+  };
+
+  if (loading) return <div>Loading...</div>;
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-2xl font-bold mb-6">{t('adminSettings')}</h2>
+      
+      <div className="space-y-6">
+        <div>
+          <h3 className="text-lg font-semibold mb-3">Authentication Settings</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span>{t('emergentAuth')}</span>
+              <button
+                onClick={() => updateSettings({ emergent_auth_enabled: !settings.emergent_auth_enabled })}
+                className={`px-3 py-1 rounded ${
+                  settings.emergent_auth_enabled 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-gray-600 text-white'
+                }`}
+              >
+                {settings.emergent_auth_enabled ? t('enabled') : t('disabled')}
+              </button>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <span>{t('googleOAuth')}</span>
+              <button
+                onClick={() => updateSettings({ google_oauth_enabled: !settings.google_oauth_enabled })}
+                className={`px-3 py-1 rounded ${
+                  settings.google_oauth_enabled 
+                    ? 'bg-green-600 text-white' 
+                    : 'bg-gray-600 text-white'
+                }`}
+              >
+                {settings.google_oauth_enabled ? t('enabled') : t('disabled')}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-3">Email Settings</h3>
+          <div className="flex items-center justify-between">
+            <span>{t('emailNotifications')}</span>
+            <button
+              onClick={() => updateSettings({ email_notifications_enabled: !settings.email_notifications_enabled })}
+              className={`px-3 py-1 rounded ${
+                settings.email_notifications_enabled 
+                  ? 'bg-green-600 text-white' 
+                  : 'bg-gray-600 text-white'
+              }`}
+            >
+              {settings.email_notifications_enabled ? t('enabled') : t('disabled')}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="text-lg font-semibold mb-3">System Settings</h3>
+          <div className="flex items-center justify-between">
+            <span>{t('language')}</span>
+            <select
+              value={settings.system_language}
+              onChange={(e) => updateSettings({ system_language: e.target.value })}
+              className="px-3 py-1 border rounded"
+            >
+              <option value="en">{t('english')}</option>
+              <option value="gr">{t('greek')}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// User Management Component
+const UserManagement = () => {
+  const { t } = useContext(LanguageContext);
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/users`);
+      setUsers(response.data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      try {
+        await axios.delete(`${API}/admin/users/${userId}`);
+        fetchUsers();
+      } catch (error) {
+        console.error('Error deleting user:', error);
+      }
+    }
+  };
+
+  return (
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-2xl font-bold mb-6">{t('users')}</h2>
+      <div className="space-y-4">
+        {users.map((user) => (
+          <div key={user.id} className="border rounded-lg p-4 flex justify-between items-center">
+            <div>
+              <h3 className="font-semibold">{user.name}</h3>
+              <p className="text-gray-600">{user.email}</p>
+              <p className="text-sm text-gray-500">{t(user.role)}</p>
+            </div>
+            <button
+              onClick={() => deleteUser(user.id)}
+              className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              {t('delete')}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Main App Component
 function App() {
+  const { user } = useContext(AuthContext);
+
   return (
     <div className="App">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      {user ? <Dashboard /> : <AuthForm />}
     </div>
   );
 }
 
-export default App;
+// App with providers
+function AppWithProviders() {
+  return (
+    <LanguageProvider>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </LanguageProvider>
+  );
+}
+
+export default AppWithProviders;
