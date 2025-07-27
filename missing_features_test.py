@@ -244,7 +244,7 @@ def test_enhanced_chat_system_with_admin_approval(results: MissingFeaturesTestRe
             # Admin accepts the bid to make request assigned
             if "admin" in results.tokens:
                 success, response, status = make_request("PUT", f"/bids/{results.test_data['bid_id']}/status", 
-                                                        {"status": "accepted"}, results.tokens["admin"])
+                                                        None, results.tokens["admin"], {"status_value": "accepted"})
                 if success:
                     results.add_result("Setup: Bid Acceptance for Chat", True, "Bid accepted to enable chat testing")
                 else:
