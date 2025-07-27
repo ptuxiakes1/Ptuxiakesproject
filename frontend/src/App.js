@@ -414,9 +414,9 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-100">
       <Navigation />
       <div className="container mx-auto p-4">
-        <div className="flex">
-          <div className="w-1/4 bg-white p-4 rounded-lg shadow mr-4">
-            <nav className="space-y-2">
+        <div className="flex flex-col md:flex-row">
+          <div className="w-full md:w-1/4 bg-white p-4 rounded-lg shadow mb-4 md:mb-0 md:mr-4">
+            <nav className="flex md:flex-col space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto md:overflow-x-visible">
               <button
                 onClick={() => setCurrentView('dashboard')}
                 className={`w-full text-left px-4 py-2 rounded ${currentView === 'dashboard' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
