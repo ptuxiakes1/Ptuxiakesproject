@@ -702,7 +702,7 @@ const RequestCard = ({ request, onRefresh }) => {
       </p>
       <p className="text-gray-500 mb-4">Due: {new Date(request.due_date).toLocaleDateString()}</p>
       
-      <div className="flex space-x-2">
+      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
         {user?.role === 'supervisor' && request.status === 'pending' && (
           <button
             onClick={() => setShowBidForm(true)}
