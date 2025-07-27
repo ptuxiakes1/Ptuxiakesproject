@@ -482,7 +482,7 @@ async def update_bid_status(bid_id: str, status_value: str, current_user: User =
     
     return {"message": "Bid status updated successfully"}
 
-# Chat system
+# Chat system with admin approval
 @api_router.post("/chat/send", response_model=ChatMessage)
 async def send_message(message_data: ChatMessageCreate, current_user: User = Depends(get_current_user)):
     # Check if request exists and user has permission to chat
@@ -514,18 +514,19 @@ async def send_message(message_data: ChatMessageCreate, current_user: User = Dep
     
     message_dict = message_data.dict()
     message_dict["sender_id"] = current_user.id
+    message_dict["approved"] = False  # Messages need admin approval
     
     message = ChatMessage(**message_dict)
     await db.chat_messages.insert_one(message.dict())
     
-    # Notify admin about new chat activity
+    # Notify admin about new message that needs approval
     admins = await db.users.find({"role": "admin"}).to_list(None)
     for admin in admins:
         notification = Notification(
             user_id=admin["id"],
-            title="New Chat Activity",
-            message=f"New message in chat for request: {request['title']}",
-            type="chat_activity"
+            title="Message Needs Approval",
+            message=f"New message from {current_user.name} needs approval for request: {request['title']}",
+            type="message_approval"
         )
         await db.notifications.insert_one(notification.dict())
     
@@ -552,8 +553,49 @@ async def get_chat_messages(request_id: str, current_user: User = Depends(get_cu
             detail="Access denied"
         )
     
-    messages = await db.chat_messages.find({"request_id": request_id}).sort("timestamp", 1).to_list(None)
+    # Students and supervisors only see approved messages
+    if current_user.role in ["student", "supervisor"]:
+        messages = await db.chat_messages.find({"request_id": request_id, "approved": True}).sort("timestamp", 1).to_list(None)
+    else:  # Admin sees all messages
+        messages = await db.chat_messages.find({"request_id": request_id}).sort("timestamp", 1).to_list(None)
+    
     return [ChatMessage(**message) for message in messages]
+
+@api_router.get("/admin/messages/pending", response_model=List[ChatMessage])
+async def get_pending_messages(current_user: User = Depends(admin_only)):
+    messages = await db.chat_messages.find({"approved": False}).sort("timestamp", 1).to_list(None)
+    return [ChatMessage(**message) for message in messages]
+
+@api_router.put("/admin/messages/{message_id}/approve")
+async def approve_message(message_id: str, current_user: User = Depends(admin_only)):
+    message = await db.chat_messages.find_one({"id": message_id})
+    if not message:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Message not found"
+        )
+    
+    # Approve message
+    await db.chat_messages.update_one(
+        {"id": message_id},
+        {"$set": {"approved": True, "approved_by": current_user.id, "approved_at": datetime.utcnow()}}
+    )
+    
+    # Notify receiver about approved message
+    notification = Notification(
+        user_id=message["receiver_id"],
+        title="New Message",
+        message=f"You have a new message in your chat",
+        type="message_approved"
+    )
+    await db.notifications.insert_one(notification.dict())
+    
+    return {"message": "Message approved successfully"}
+
+@api_router.delete("/admin/messages/{message_id}")
+async def delete_message(message_id: str, current_user: User = Depends(admin_only)):
+    await db.chat_messages.delete_one({"id": message_id})
+    return {"message": "Message deleted successfully"}
 
 # Notifications
 @api_router.get("/notifications", response_model=List[Notification])
