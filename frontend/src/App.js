@@ -445,13 +445,13 @@ const Dashboard = () => {
                 <>
                   <button
                     onClick={() => setCurrentView('settings')}
-                    className={`w-full text-left px-4 py-2 rounded ${currentView === 'settings' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
+                    className={`flex-shrink-0 px-4 py-2 rounded whitespace-nowrap ${currentView === 'settings' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
                   >
                     {t('settings')}
                   </button>
                   <button
                     onClick={() => setCurrentView('users')}
-                    className={`w-full text-left px-4 py-2 rounded ${currentView === 'users' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
+                    className={`flex-shrink-0 px-4 py-2 rounded whitespace-nowrap ${currentView === 'users' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
                   >
                     {t('users')}
                   </button>
@@ -459,7 +459,7 @@ const Dashboard = () => {
               )}
             </nav>
           </div>
-          <div className="w-3/4">
+          <div className="w-full md:w-3/4">
             {renderContent()}
           </div>
         </div>
