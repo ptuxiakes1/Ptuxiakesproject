@@ -602,7 +602,63 @@ async def update_admin_settings(settings_data: AdminSettingsUpdate, current_user
     
     return {"message": "Settings updated successfully"}
 
-# User management (admin only)
+# Admin price management
+@api_router.post("/admin/prices", response_model=AdminPrice)
+async def set_admin_price(price_data: AdminPriceCreate, current_user: User = Depends(admin_only)):
+    # Check if request exists
+    request = await db.essay_requests.find_one({"id": price_data.request_id})
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found"
+        )
+    
+    price_dict = price_data.dict()
+    price_dict["set_by_admin"] = current_user.id
+    
+    admin_price = AdminPrice(**price_dict)
+    await db.admin_prices.insert_one(admin_price.dict())
+    
+    # Notify student about admin price
+    notification = Notification(
+        user_id=request["student_id"],
+        title="Admin Set Price",
+        message=f"Admin set price ${admin_price.price} for your request: {request['title']}",
+        type="admin_price"
+    )
+    await db.notifications.insert_one(notification.dict())
+    
+    return admin_price
+
+@api_router.get("/admin/prices", response_model=List[AdminPrice])
+async def get_admin_prices(current_user: User = Depends(admin_only)):
+    prices = await db.admin_prices.find().to_list(None)
+    return [AdminPrice(**price) for price in prices]
+
+@api_router.get("/prices/request/{request_id}", response_model=List[AdminPrice])
+async def get_request_prices(request_id: str, current_user: User = Depends(get_current_user)):
+    # Check if request exists and user has permission
+    request = await db.essay_requests.find_one({"id": request_id})
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found"
+        )
+    
+    # Students can only see prices for their own requests
+    if current_user.role == "student" and request["student_id"] != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+    
+    prices = await db.admin_prices.find({"request_id": request_id, "visible_to_student": True}).to_list(None)
+    return [AdminPrice(**price) for price in prices]
+
+@api_router.delete("/admin/prices/{price_id}")
+async def delete_admin_price(price_id: str, current_user: User = Depends(admin_only)):
+    await db.admin_prices.delete_one({"id": price_id})
+    return {"message": "Price deleted successfully"}
 @api_router.get("/admin/users", response_model=List[User])
 async def get_all_users(current_user: User = Depends(admin_only)):
     users = await db.users.find().to_list(None)
