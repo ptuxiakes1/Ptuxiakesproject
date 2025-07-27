@@ -569,13 +569,27 @@ def test_chat_system(results: TestResults):
         results.add_result("Chat System Tests", False, "Missing student or supervisor tokens for testing")
         return
     
-    if "essay_request_id" not in results.test_data:
-        results.add_result("Chat System Tests", False, "No essay request available for chat testing")
+    # Create a new essay request specifically for chat testing (since the previous one is now accepted)
+    chat_essay_request_data = {
+        "title": "Modern Greek Literature Analysis",
+        "due_date": (datetime.now() + timedelta(days=21)).isoformat(),
+        "word_count": 3000,
+        "assignment_type": "essay",
+        "field_of_study": "literature",
+        "attachments": [],
+        "extra_information": "Focus on 20th century Greek poetry and its cultural impact"
+    }
+    
+    success, response, status = make_request("POST", "/requests", chat_essay_request_data, results.tokens["student"])
+    if not success or "id" not in response:
+        results.add_result("Chat System Tests", False, "Failed to create essay request for chat testing")
         return
+    
+    chat_request_id = response["id"]
     
     # Test sending a message
     message_data = {
-        "request_id": results.test_data["essay_request_id"],
+        "request_id": chat_request_id,
         "receiver_id": results.test_data.get("supervisor_id", "test_receiver"),
         "message": "Hello, I have some questions about the essay requirements. Could you please clarify the expected citation style?"
     }
@@ -588,8 +602,7 @@ def test_chat_system(results: TestResults):
         results.add_result("Chat Message Sending", False, "Failed to send message", response)
     
     # Test retrieving chat messages
-    request_id = results.test_data["essay_request_id"]
-    success, response, status = make_request("GET", f"/chat/{request_id}", token=results.tokens["student"])
+    success, response, status = make_request("GET", f"/chat/{chat_request_id}", token=results.tokens["student"])
     if success and isinstance(response, list):
         results.add_result("Chat Message Retrieval", True, f"Retrieved {len(response)} chat message(s)")
     else:
@@ -609,11 +622,25 @@ def test_chat_system(results: TestResults):
         other_student_token = response["token"]
         
         # Try to access chat for request they don't own
-        success, response, status = make_request("GET", f"/chat/{request_id}", token=other_student_token)
+        success, response, status = make_request("GET", f"/chat/{chat_request_id}", token=other_student_token)
         if not success and status == 403:
             results.add_result("Chat Access Control", True, "Correctly restricted access to other students' chats")
         else:
             results.add_result("Chat Access Control", False, "Should restrict access to other students' chats", response)
+    
+    # Test chat restriction to pending status (using the original accepted request)
+    if "essay_request_id" in results.test_data:
+        message_data_accepted = {
+            "request_id": results.test_data["essay_request_id"],  # This request is now accepted
+            "receiver_id": results.test_data.get("supervisor_id", "test_receiver"),
+            "message": "This should fail because request is accepted"
+        }
+        
+        success, response, status = make_request("POST", "/chat/send", message_data_accepted, results.tokens["student"])
+        if not success and "Chat is only available during pending status" in str(response):
+            results.add_result("Chat Pending Status Restriction", True, "Correctly restricted chat to pending status only")
+        else:
+            results.add_result("Chat Pending Status Restriction", False, "Should restrict chat to pending status only", response)
 
 def test_integration_points(results: TestResults):
     """Test Key Integration Points"""
