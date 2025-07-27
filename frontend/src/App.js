@@ -419,25 +419,25 @@ const Dashboard = () => {
             <nav className="flex md:flex-col space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto md:overflow-x-visible">
               <button
                 onClick={() => setCurrentView('dashboard')}
-                className={`w-full text-left px-4 py-2 rounded ${currentView === 'dashboard' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
+                className={`flex-shrink-0 px-4 py-2 rounded whitespace-nowrap ${currentView === 'dashboard' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
               >
                 {t('dashboard')}
               </button>
               <button
                 onClick={() => setCurrentView('requests')}
-                className={`w-full text-left px-4 py-2 rounded ${currentView === 'requests' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
+                className={`flex-shrink-0 px-4 py-2 rounded whitespace-nowrap ${currentView === 'requests' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
               >
                 {t('essayRequests')}
               </button>
               <button
                 onClick={() => setCurrentView('bids')}
-                className={`w-full text-left px-4 py-2 rounded ${currentView === 'bids' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
+                className={`flex-shrink-0 px-4 py-2 rounded whitespace-nowrap ${currentView === 'bids' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
               >
                 {t('bids')}
               </button>
               <button
                 onClick={() => setCurrentView('notifications')}
-                className={`w-full text-left px-4 py-2 rounded ${currentView === 'notifications' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
+                className={`flex-shrink-0 px-4 py-2 rounded whitespace-nowrap ${currentView === 'notifications' ? 'bg-blue-600 text-white' : 'hover:bg-gray-200'}`}
               >
                 {t('notifications')} {notifications.filter(n => !n.read).length > 0 && <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs ml-2">{notifications.filter(n => !n.read).length}</span>}
               </button>
