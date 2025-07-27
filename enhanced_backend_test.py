@@ -604,8 +604,8 @@ def test_complete_integration_flow(results: EnhancedTestResults):
                     
                     # Step 3: Admin accepts bid
                     if "admin" in results.tokens:
-                        success, response, status = make_request("PUT", f"/bids/{flow_bid_id}/status", 
-                                                                params={"status": "accepted"}, token=results.tokens["admin"])
+                        success, response, status = make_request("PUT", f"/bids/{flow_bid_id}/status?status_value=accepted", 
+                                                                token=results.tokens["admin"])
                         if success:
                             results.add_result("Flow Step 3: Admin Accepts Bid", True, "Admin successfully accepted bid")
                             
