@@ -305,7 +305,7 @@ async def get_bids(current_user: User = Depends(get_current_user)):
 async def update_bid_status(bid_id: str, status: str, current_user: User = Depends(admin_only)):
     if status not in ["pending", "accepted", "rejected"]:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=400,
             detail="Invalid status"
         )
     
