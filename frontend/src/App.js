@@ -440,7 +440,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-turquoise-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50">
       <Navigation />
       <div className="container mx-auto p-4">
         <div className="flex flex-col md:flex-row">
