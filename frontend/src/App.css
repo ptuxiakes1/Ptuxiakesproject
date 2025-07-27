@@ -274,7 +274,7 @@
 }
 
 .stat-card.turquoise {
-  @apply bg-gradient-to-br from-turquoise-100 to-turquoise-200 border-turquoise-200;
+  @apply bg-gradient-to-br from-teal-100 to-teal-200 border-teal-200;
 }
 
 .stat-card.green {
