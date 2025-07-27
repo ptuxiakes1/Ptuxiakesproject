@@ -596,8 +596,8 @@ const CreateRequestForm = ({ onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg max-w-md w-full max-h-96 overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white p-6 rounded-lg w-full max-w-md max-h-96 overflow-y-auto">
         <h3 className="text-xl font-bold mb-4">{t('createRequest')}</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
