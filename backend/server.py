@@ -232,11 +232,38 @@ async def create_essay_request(request_data: EssayRequestCreate, current_user: U
 @api_router.get("/requests", response_model=List[EssayRequest])
 async def get_essay_requests(current_user: User = Depends(get_current_user)):
     if current_user.role == "student":
+        # Students can only see their own requests
         requests = await db.essay_requests.find({"student_id": current_user.id}).to_list(None)
     elif current_user.role == "supervisor":
+        # Supervisors can see all pending requests
         requests = await db.essay_requests.find({"status": "pending"}).to_list(None)
     else:  # admin
+        # Admins can see all requests
         requests = await db.essay_requests.find().to_list(None)
+    
+    return [EssayRequest(**request) for request in requests]
+
+@api_router.get("/requests/assigned", response_model=List[EssayRequest])
+async def get_assigned_requests(current_user: User = Depends(get_current_user)):
+    if current_user.role == "student":
+        # Students can see their assigned requests
+        requests = await db.essay_requests.find({
+            "student_id": current_user.id,
+            "status": "accepted",
+            "assigned_supervisor": {"$ne": None}
+        }).to_list(None)
+    elif current_user.role == "supervisor":
+        # Supervisors can see requests assigned to them
+        requests = await db.essay_requests.find({
+            "assigned_supervisor": current_user.id,
+            "status": "accepted"
+        }).to_list(None)
+    else:  # admin
+        # Admins can see all assigned requests
+        requests = await db.essay_requests.find({
+            "status": "accepted",
+            "assigned_supervisor": {"$ne": None}
+        }).to_list(None)
     
     return [EssayRequest(**request) for request in requests]
 
@@ -255,8 +282,77 @@ async def get_essay_request(request_id: str, current_user: User = Depends(get_cu
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
         )
+    elif current_user.role == "supervisor" and request["status"] != "pending" and request.get("assigned_supervisor") != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
     
     return EssayRequest(**request)
+
+@api_router.put("/requests/{request_id}")
+async def update_essay_request(request_id: str, request_data: EssayRequestCreate, current_user: User = Depends(get_current_user)):
+    request = await db.essay_requests.find_one({"id": request_id})
+    if not request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Request not found"
+        )
+    
+    # Check permissions
+    if current_user.role == "student" and request["student_id"] != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+    elif current_user.role != "admin" and current_user.role != "student":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+    
+    # Update request
+    update_data = request_data.dict()
+    update_data["due_date"] = update_data["due_date"].isoformat() if isinstance(update_data["due_date"], datetime) else update_data["due_date"]
+    
+    await db.essay_requests.update_one(
+        {"id": request_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Request updated successfully"}
+
+@api_router.delete("/requests/{request_id}")
+async def delete_essay_request(request_id: str, current_user: User = Depends(admin_only)):
+    await db.essay_requests.delete_one({"id": request_id})
+    return {"message": "Request deleted successfully"}
+
+@api_router.put("/requests/{request_id}/assign")
+async def assign_request_to_supervisor(request_id: str, supervisor_id: str, current_user: User = Depends(admin_only)):
+    # Check if supervisor exists
+    supervisor = await db.users.find_one({"id": supervisor_id, "role": "supervisor"})
+    if not supervisor:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Supervisor not found"
+        )
+    
+    # Update request
+    await db.essay_requests.update_one(
+        {"id": request_id},
+        {"$set": {"assigned_supervisor": supervisor_id, "status": "accepted"}}
+    )
+    
+    # Create notification for supervisor
+    notification = Notification(
+        user_id=supervisor_id,
+        title="New Assignment",
+        message=f"You have been assigned a new essay request",
+        type="assignment"
+    )
+    await db.notifications.insert_one(notification.dict())
+    
+    return {"message": "Request assigned successfully"}
 
 # Bidding system
 @api_router.post("/bids", response_model=Bid)
