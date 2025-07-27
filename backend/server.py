@@ -369,7 +369,7 @@ async def assign_request_to_supervisor(request_id: str, supervisor_id: str, curr
     
     return {"message": "Request assigned successfully"}
 
-# Bidding system
+# Bidding system (updated - only admins can see bids)
 @api_router.post("/bids", response_model=Bid)
 async def create_bid(bid_data: BidCreate, current_user: User = Depends(get_current_user)):
     if current_user.role != "supervisor":
@@ -392,22 +392,13 @@ async def create_bid(bid_data: BidCreate, current_user: User = Depends(get_curre
     bid = Bid(**bid_dict)
     await db.bids.insert_one(bid.dict())
     
-    # Notify student
-    notification = Notification(
-        user_id=request["student_id"],
-        title="New Bid Received",
-        message=f"You received a bid for '{request['title']}'",
-        type="bid_received"
-    )
-    await db.notifications.insert_one(notification.dict())
-    
-    # Notify admin
+    # Notify admins about new bid (students don't get notified)
     admins = await db.users.find({"role": "admin"}).to_list(None)
     for admin in admins:
         notification = Notification(
             user_id=admin["id"],
             title="New Bid Submitted",
-            message=f"New bid submitted for '{request['title']}'",
+            message=f"New bid submitted by {current_user.name} for '{request['title']}'",
             type="bid_submitted"
         )
         await db.notifications.insert_one(notification.dict())
@@ -417,11 +408,13 @@ async def create_bid(bid_data: BidCreate, current_user: User = Depends(get_curre
 @api_router.get("/bids", response_model=List[Bid])
 async def get_bids(current_user: User = Depends(get_current_user)):
     if current_user.role == "supervisor":
+        # Supervisors can only see their own bids
         bids = await db.bids.find({"supervisor_id": current_user.id}).to_list(None)
     elif current_user.role == "admin":
+        # Only admins can see all bids
         bids = await db.bids.find().to_list(None)
     else:
-        # Students cannot see bids directly
+        # Students cannot see bids at all
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
