@@ -478,15 +478,20 @@ async def send_message(message_data: ChatMessageCreate, current_user: User = Dep
             detail="Request not found"
         )
     
-    # Only allow chat during pending status
-    if request["status"] != "pending":
+    # Allow chat for assigned requests (accepted status)
+    if request["status"] != "accepted" or not request.get("assigned_supervisor"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Chat is only available during pending status"
+            detail="Chat is only available for assigned requests"
         )
     
     # Check permissions
     if current_user.role == "student" and request["student_id"] != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+    elif current_user.role == "supervisor" and request["assigned_supervisor"] != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -497,6 +502,17 @@ async def send_message(message_data: ChatMessageCreate, current_user: User = Dep
     
     message = ChatMessage(**message_dict)
     await db.chat_messages.insert_one(message.dict())
+    
+    # Notify admin about new chat activity
+    admins = await db.users.find({"role": "admin"}).to_list(None)
+    for admin in admins:
+        notification = Notification(
+            user_id=admin["id"],
+            title="New Chat Activity",
+            message=f"New message in chat for request: {request['title']}",
+            type="chat_activity"
+        )
+        await db.notifications.insert_one(notification.dict())
     
     return message
 
@@ -515,8 +531,13 @@ async def get_chat_messages(request_id: str, current_user: User = Depends(get_cu
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
         )
+    elif current_user.role == "supervisor" and request.get("assigned_supervisor") != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
     
-    messages = await db.chat_messages.find({"request_id": request_id}).to_list(None)
+    messages = await db.chat_messages.find({"request_id": request_id}).sort("timestamp", 1).to_list(None)
     return [ChatMessage(**message) for message in messages]
 
 # Notifications
