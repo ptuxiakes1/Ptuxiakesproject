@@ -386,20 +386,48 @@ async def create_bid(bid_data: BidCreate, current_user: User = Depends(get_curre
     )
     await db.notifications.insert_one(notification.dict())
     
+    # Notify admin
+    admins = await db.users.find({"role": "admin"}).to_list(None)
+    for admin in admins:
+        notification = Notification(
+            user_id=admin["id"],
+            title="New Bid Submitted",
+            message=f"New bid submitted for '{request['title']}'",
+            type="bid_submitted"
+        )
+        await db.notifications.insert_one(notification.dict())
+    
     return bid
 
 @api_router.get("/bids", response_model=List[Bid])
 async def get_bids(current_user: User = Depends(get_current_user)):
     if current_user.role == "supervisor":
         bids = await db.bids.find({"supervisor_id": current_user.id}).to_list(None)
-    else:  # admin or student
+    elif current_user.role == "admin":
         bids = await db.bids.find().to_list(None)
+    else:
+        # Students cannot see bids directly
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
     
     return [Bid(**bid) for bid in bids]
 
+@api_router.get("/bids/request/{request_id}", response_model=List[Bid])
+async def get_bids_for_request(request_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only admins can view bids for requests"
+        )
+    
+    bids = await db.bids.find({"request_id": request_id}).to_list(None)
+    return [Bid(**bid) for bid in bids]
+
 @api_router.put("/bids/{bid_id}/status")
-async def update_bid_status(bid_id: str, status: str, current_user: User = Depends(admin_only)):
-    if status not in ["pending", "accepted", "rejected"]:
+async def update_bid_status(bid_id: str, status_value: str, current_user: User = Depends(admin_only)):
+    if status_value not in ["pending", "accepted", "rejected"]:
         raise HTTPException(
             status_code=400,
             detail="Invalid status"
@@ -413,20 +441,26 @@ async def update_bid_status(bid_id: str, status: str, current_user: User = Depen
         )
     
     # Update bid status
-    await db.bids.update_one({"id": bid_id}, {"$set": {"status": status}})
+    await db.bids.update_one({"id": bid_id}, {"$set": {"status": status_value}})
     
     # Update essay request if bid is accepted
-    if status == "accepted":
+    if status_value == "accepted":
         await db.essay_requests.update_one(
             {"id": bid["request_id"]}, 
             {"$set": {"status": "accepted", "assigned_supervisor": bid["supervisor_id"]}}
+        )
+        
+        # Reject other bids for this request
+        await db.bids.update_many(
+            {"request_id": bid["request_id"], "id": {"$ne": bid_id}},
+            {"$set": {"status": "rejected"}}
         )
     
     # Notify supervisor
     notification = Notification(
         user_id=bid["supervisor_id"],
         title="Bid Status Updated",
-        message=f"Your bid has been {status}",
+        message=f"Your bid has been {status_value}",
         type="bid_status_update"
     )
     await db.notifications.insert_one(notification.dict())
