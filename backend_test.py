@@ -66,9 +66,13 @@ def test_authentication_system(results: TestResults):
     """Test Core Authentication System"""
     print("\n=== Testing Core Authentication System ===")
     
+    # Generate unique email addresses for this test run
+    import time
+    timestamp = str(int(time.time()))
+    
     # Test user registration - Student
     student_data = {
-        "email": "maria.papadopoulos@university.gr",
+        "email": f"maria.papadopoulos.{timestamp}@university.gr",
         "name": "Maria Papadopoulos",
         "password": "SecurePass123!",
         "role": "student"
@@ -84,7 +88,7 @@ def test_authentication_system(results: TestResults):
     
     # Test user registration - Supervisor
     supervisor_data = {
-        "email": "dr.kostas.dimitriou@university.gr",
+        "email": f"dr.kostas.dimitriou.{timestamp}@university.gr",
         "name": "Dr. Kostas Dimitriou",
         "password": "SupervisorPass456!",
         "role": "supervisor"
@@ -100,7 +104,7 @@ def test_authentication_system(results: TestResults):
     
     # Test user registration - Admin
     admin_data = {
-        "email": "admin@university.gr",
+        "email": f"admin.{timestamp}@university.gr",
         "name": "System Administrator",
         "password": "AdminPass789!",
         "role": "admin"
@@ -123,7 +127,7 @@ def test_authentication_system(results: TestResults):
     
     # Test login with valid credentials
     login_data = {
-        "email": "maria.papadopoulos@university.gr",
+        "email": student_data["email"],
         "password": "SecurePass123!"
     }
     
@@ -135,7 +139,7 @@ def test_authentication_system(results: TestResults):
     
     # Test login with invalid credentials
     invalid_login = {
-        "email": "maria.papadopoulos@university.gr",
+        "email": student_data["email"],
         "password": "WrongPassword"
     }
     
