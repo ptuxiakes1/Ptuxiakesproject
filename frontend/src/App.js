@@ -52,7 +52,7 @@ const translations = {
     message: "Message",
     adminSettings: "Admin Settings",
     googleOAuth: "Google OAuth",
-    emergentAuth: "Emergent Auth",
+    emergentAuth: "Emergent Authentication",
     emailNotifications: "Email Notifications",
     enabled: "Enabled",
     disabled: "Disabled",
