@@ -931,7 +931,7 @@ const BidsView = ({ bids, onRefresh }) => {
             <p className="text-gray-700 mb-4">{bid.proposal}</p>
             
             {user?.role === 'admin' && bid.status === 'pending' && (
-              <div className="flex space-x-2">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 <button
                   onClick={() => handleBidStatusChange(bid.id, 'accepted')}
                   className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
