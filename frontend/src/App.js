@@ -111,7 +111,7 @@ const translations = {
     message: "Μήνυμα",
     adminSettings: "Ρυθμίσεις Διαχειριστή",
     googleOAuth: "Google OAuth",
-    emergentAuth: "Emergent Auth",
+    emergentAuth: "Emergent Authentication",
     emailNotifications: "Ειδοποιήσεις Email",
     enabled: "Ενεργοποιημένο",
     disabled: "Απενεργοποιημένο",
