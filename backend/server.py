@@ -80,8 +80,7 @@ class Bid(BaseModel):
     supervisor_id: str
     request_id: str
     price: float
-    estimated_completion: datetime
-    proposal: str
+    notes: str
     status: str = "pending"  # pending, accepted, rejected
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
