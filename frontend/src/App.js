@@ -525,9 +525,9 @@ const DashboardHome = ({ requests, assignedRequests, bids, notifications }) => {
           <h3 className="font-semibold text-blue-800 mb-2">{t('essayRequests')}</h3>
           <p className="text-3xl font-bold text-blue-600">{stats.totalRequests}</p>
         </div>
-        <div className="bg-gradient-to-br from-turquoise-100 to-turquoise-200 p-6 rounded-xl shadow-sm border border-turquoise-200">
-          <h3 className="font-semibold text-turquoise-800 mb-2">{t('assignedEssays')}</h3>
-          <p className="text-3xl font-bold text-turquoise-600">{stats.assignedRequests}</p>
+        <div className="bg-gradient-to-br from-teal-100 to-teal-200 p-6 rounded-xl shadow-sm border border-teal-200">
+          <h3 className="font-semibold text-teal-800 mb-2">{t('assignedEssays')}</h3>
+          <p className="text-3xl font-bold text-teal-600">{stats.assignedRequests}</p>
         </div>
         <div className="bg-gradient-to-br from-green-100 to-green-200 p-6 rounded-xl shadow-sm border border-green-200">
           <h3 className="font-semibold text-green-800 mb-2">{t('bids')}</h3>
