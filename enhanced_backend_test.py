@@ -495,8 +495,7 @@ def test_admin_request_management(results: EnhancedTestResults):
     
     # Test manual supervisor assignment by admins
     if "admin" in results.tokens and "request2_id" in results.test_data and "supervisor2_id" in results.test_data:
-        success, response, status = make_request("PUT", f"/requests/{results.test_data['request2_id']}/assign", 
-                                                {"supervisor_id": results.test_data["supervisor2_id"]}, 
+        success, response, status = make_request("PUT", f"/requests/{results.test_data['request2_id']}/assign?supervisor_id={results.test_data['supervisor2_id']}", 
                                                 token=results.tokens["admin"])
         if success:
             results.add_result("Admin Manual Assignment", True, "Admin can manually assign supervisors")
