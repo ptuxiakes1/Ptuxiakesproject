@@ -2918,6 +2918,117 @@ const PaymentInfoModal = ({ requestId, onClose }) => {
   );
 };
 
+// Student Payments View Component
+const StudentPaymentsView = () => {
+  const { user } = useContext(AuthContext);
+  const { t } = useContext(LanguageContext);
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPayments();
+  }, []);
+
+  const fetchPayments = async () => {
+    try {
+      const response = await axios.get(`${API}/payments/student/${user.id}`);
+      setPayments(response.data);
+    } catch (error) {
+      console.error('Error fetching payments:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'pending': return t('pendingPayment');
+      case 'approved': return t('approvedPayment');
+      case 'rejected': return t('rejectedPayment');
+      default: return status;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+        <div className="text-center py-8">Loading payments...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+      <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6 text-gray-800">{t('payments')}</h2>
+      
+      {payments.length === 0 ? (
+        <div className="text-center text-gray-500 py-8">No payment requests found</div>
+      ) : (
+        <div className="space-y-4">
+          {payments.map((payment) => (
+            <div key={payment.id} className="border border-gray-200 rounded-xl p-4 sm:p-6 hover:shadow-md transition-shadow">
+              <div className="flex flex-col sm:flex-row justify-between items-start mb-4 space-y-2 sm:space-y-0">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-base sm:text-lg text-gray-800">
+                    Request ID: {payment.request_id}
+                  </h3>
+                  <p className="text-gray-600 text-sm sm:text-base">
+                    {t('paymentMethod')}: {payment.payment_method}
+                  </p>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-xs sm:text-sm border ${getStatusColor(payment.status)}`}>
+                  {getStatusText(payment.status)}
+                </span>
+              </div>
+
+              {payment.status === 'approved' && (
+                <div className="bg-green-50 p-3 rounded-lg mb-4">
+                  <h4 className="font-semibold text-green-800 mb-2">{t('paymentDetails')}:</h4>
+                  <p className="text-green-700 font-mono text-sm bg-white p-2 rounded">
+                    {payment.payment_details}
+                  </p>
+                  {payment.instructions && (
+                    <div className="mt-2">
+                      <h5 className="font-medium text-green-800">{t('paymentInstructions')}:</h5>
+                      <p className="text-green-700 text-sm">{payment.instructions}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {payment.status === 'pending' && (
+                <div className="bg-yellow-50 p-3 rounded-lg">
+                  <p className="text-yellow-800 text-sm">
+                    Your payment request is pending admin approval. You will be notified when it's processed.
+                  </p>
+                </div>
+              )}
+
+              <p className="text-gray-500 text-sm">
+                Created: {new Date(payment.created_at).toLocaleString()}
+                {payment.approved_at && (
+                  <span className="ml-4">
+                    Approved: {new Date(payment.approved_at).toLocaleString()}
+                  </span>
+                )}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Main App Component
 function App() {
   const { user } = useContext(AuthContext);
