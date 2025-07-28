@@ -343,7 +343,7 @@ def test_bidding_system(results: TestResults):
     
     # Test bid permissions - non-admin trying to update status
     if "supervisor" in results.tokens and "bid_id" in results.test_data:
-        success, response, status = make_request("PUT", f"/bids/{results.test_data['bid_id']}/status", {"status": "pending"}, results.tokens["supervisor"])
+        success, response, status = make_request("PUT", f"/bids/{results.test_data['bid_id']}/status?status_value=pending", token=results.tokens["supervisor"])
         if not success and status == 403:
             results.add_result("Bid Status Update Permission", True, "Correctly prevented non-admin from updating bid status")
         else:
