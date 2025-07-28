@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional
 import sys
 
 # Configuration
-BASE_URL = "https://4cd6362e-1afc-4bf0-b7fb-6c2b8d7cb81d.preview.emergentagent.com/api"
+BASE_URL = "https://9bc8a6f2-9f09-4c20-aa03-681a44fc48ba.preview.emergentagent.com/api"
 HEADERS = {"Content-Type": "application/json"}
 
 class EnhancedTestResults:
