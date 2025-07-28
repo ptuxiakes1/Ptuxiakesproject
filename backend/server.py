@@ -966,20 +966,20 @@ async def get_all_supervisors(current_user: User = Depends(admin_only)):
 # Payment information management
 @api_router.post("/admin/payments", response_model=PaymentInfo)
 async def create_payment_info(payment_data: PaymentInfoCreate, current_user: User = Depends(admin_only)):
-    # Check if bid exists
-    bid = await db.bids.find_one({"id": payment_data.bid_id})
-    if not bid:
+    # Check if request exists
+    request = await db.essay_requests.find_one({"id": payment_data.request_id})
+    if not request:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Bid not found"
+            detail="Request not found"
         )
     
-    # Check if payment info already exists for this bid
-    existing_payment = await db.payment_info.find_one({"bid_id": payment_data.bid_id})
+    # Check if payment info already exists for this request
+    existing_payment = await db.payment_info.find_one({"request_id": payment_data.request_id})
     if existing_payment:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Payment information already exists for this bid"
+            detail="Payment information already exists for this request"
         )
     
     payment_dict = payment_data.dict()
@@ -1006,6 +1006,25 @@ async def get_student_payment_info(student_id: str, current_user: User = Depends
     
     payments = await db.payment_info.find({"student_id": student_id}).to_list(None)
     return [PaymentInfo(**payment) for payment in payments]
+
+@api_router.get("/payments/request/{request_id}", response_model=PaymentInfo)
+async def get_payment_info_by_request(request_id: str, current_user: User = Depends(get_current_user)):
+    payment = await db.payment_info.find_one({"request_id": request_id})
+    if not payment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Payment information not found"
+        )
+    
+    # Check permissions
+    if current_user.role == "student":
+        if payment["student_id"] != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied"
+            )
+    
+    return PaymentInfo(**payment)
 
 @api_router.get("/payments/bid/{bid_id}", response_model=PaymentInfo)
 async def get_payment_info_by_bid(bid_id: str, current_user: User = Depends(get_current_user)):
