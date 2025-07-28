@@ -2647,6 +2647,17 @@ const PaymentInfoForm = ({ payment, onClose, onSuccess, bids }) => {
     }
   };
 
+  const handleRequestChange = (requestId) => {
+    const selectedRequest = requests.find(r => r.id === requestId);
+    if (selectedRequest) {
+      setFormData({
+        ...formData, 
+        request_id: requestId,
+        student_id: selectedRequest.student_id  // Auto-select student
+      });
+    }
+  };
+
   const selectedRequest = requests.find(r => r.id === formData.request_id);
 
   return (
@@ -2657,28 +2668,11 @@ const PaymentInfoForm = ({ payment, onClose, onSuccess, bids }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t('student')}
-            </label>
-            <select
-              value={formData.student_id}
-              onChange={(e) => setFormData({...formData, student_id: e.target.value})}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-              required
-            >
-              <option value="">Select Student</option>
-              {students.map(student => (
-                <option key={student.id} value={student.id}>{student.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
               Essay Request
             </label>
             <select
               value={formData.request_id}
-              onChange={(e) => setFormData({...formData, request_id: e.target.value})}
+              onChange={(e) => handleRequestChange(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               required
             >
@@ -2686,6 +2680,26 @@ const PaymentInfoForm = ({ payment, onClose, onSuccess, bids }) => {
               {requests.map(request => (
                 <option key={request.id} value={request.id}>
                   {request.title} - {request.field_of_study} ({request.word_count} words)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('student')} {selectedRequest && "(Auto-selected)"}
+            </label>
+            <select
+              value={formData.student_id}
+              onChange={(e) => setFormData({...formData, student_id: e.target.value})}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-gray-50"
+              disabled={!!selectedRequest}  // Disable when auto-selected
+              required
+            >
+              <option value="">Select Student</option>
+              {students.map(student => (
+                <option key={student.id} value={student.id}>
+                  {student.name} {student.id === selectedRequest?.student_id ? "(Request Owner)" : ""}
                 </option>
               ))}
             </select>
