@@ -1832,7 +1832,7 @@ const RequestCard = ({ request, onRefresh, onViewDetails }) => {
                     <p className="text-green-700 text-xs sm:text-sm">{bid.notes}</p>
                   </div>
                   <button
-                    onClick={() => setShowPaymentModal(bid.id)}
+                    onClick={() => setShowPaymentModal(request.id)}
                     className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-sm font-medium text-sm sm:text-base"
                   >
                     {t('payNow')}
