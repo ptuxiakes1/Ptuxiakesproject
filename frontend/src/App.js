@@ -1792,18 +1792,18 @@ const RequestCard = ({ request, onRefresh, onViewDetails }) => {
     try {
       // Only show payment info if the request is accepted and assigned
       if (request.status === 'accepted' && request.assigned_supervisor) {
-        // Check if payment info exists for this request
+        // Check if payment info exists for this request and is approved
         try {
           const paymentResponse = await axios.get(`${API}/payments/request/${request.id}`);
-          if (paymentResponse.data) {
+          if (paymentResponse.data && paymentResponse.data.status === 'approved') {
             setAcceptedBids([{ 
               id: paymentResponse.data.id, 
               price: 'Payment Available', 
-              notes: 'Payment information set by admin' 
+              notes: 'Payment information approved by admin' 
             }]);
           }
         } catch (error) {
-          // No payment info available for this request
+          // No approved payment info available for this request
           setAcceptedBids([]);
         }
       }
