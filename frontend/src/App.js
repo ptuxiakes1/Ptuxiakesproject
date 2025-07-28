@@ -2707,6 +2707,8 @@ const PaymentInfoModal = ({ bidId, onClose }) => {
         </button>
       </div>
     </div>
+  );
+};
 
 // Main App Component
 function App() {
