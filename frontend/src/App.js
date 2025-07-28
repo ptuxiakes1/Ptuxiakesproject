@@ -272,6 +272,7 @@ const questionCategories = [
 const SystemSettingsProvider = ({ children }) => {
   const [systemSettings, setSystemSettings] = useState({
     site_title: "Essay Bid Submission System",
+    login_title: "Essay Bid Submission System",
     site_description: "Professional essay writing and bidding platform",
     header_color: "#1e3a8a",
     header_text_color: "#ffffff",
