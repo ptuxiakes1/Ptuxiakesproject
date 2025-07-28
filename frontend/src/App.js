@@ -1701,10 +1701,13 @@ const RequestCard = ({ request, onRefresh, onViewDetails }) => {
   const { t } = useContext(LanguageContext);
   const [showBidForm, setShowBidForm] = useState(false);
   const [adminPrices, setAdminPrices] = useState([]);
+  const [acceptedBids, setAcceptedBids] = useState([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(null);
 
   useEffect(() => {
     if (user?.role === 'student') {
       fetchAdminPrices();
+      fetchAcceptedBids();
     }
   }, []);
 
@@ -1714,6 +1717,15 @@ const RequestCard = ({ request, onRefresh, onViewDetails }) => {
       setAdminPrices(response.data);
     } catch (error) {
       console.error('Error fetching admin prices:', error);
+    }
+  };
+
+  const fetchAcceptedBids = async () => {
+    try {
+      const response = await axios.get(`${API}/bids/request/${request.id}`);
+      setAcceptedBids(response.data.filter(bid => bid.status === 'accepted'));
+    } catch (error) {
+      console.error('Error fetching accepted bids:', error);
     }
   };
 
@@ -1749,6 +1761,31 @@ const RequestCard = ({ request, onRefresh, onViewDetails }) => {
           </div>
         </div>
       )}
+
+      {/* Show accepted bids and Pay Now button to students */}
+      {user?.role === 'student' && acceptedBids.length > 0 && (
+        <div className="mb-4">
+          <h4 className="font-semibold text-gray-700 mb-2 text-sm sm:text-base">Accepted Bids:</h4>
+          <div className="space-y-2">
+            {acceptedBids.map((bid) => (
+              <div key={bid.id} className="bg-green-50 p-3 rounded-lg border border-green-200">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-2 sm:space-y-0">
+                  <div>
+                    <p className="font-medium text-green-800 text-sm sm:text-base">${bid.price}</p>
+                    <p className="text-green-700 text-xs sm:text-sm">{bid.notes}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowPaymentModal(bid.id)}
+                    className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-sm font-medium text-sm sm:text-base"
+                  >
+                    {t('payNow')}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       
       <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
         <button
@@ -1775,6 +1812,13 @@ const RequestCard = ({ request, onRefresh, onViewDetails }) => {
             setShowBidForm(false);
             onRefresh();
           }}
+        />
+      )}
+
+      {showPaymentModal && (
+        <PaymentInfoModal
+          bidId={showPaymentModal}
+          onClose={() => setShowPaymentModal(null)}
         />
       )}
     </div>
