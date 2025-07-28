@@ -959,6 +959,91 @@ async def get_all_supervisors(current_user: User = Depends(admin_only)):
     supervisors = await db.users.find({"role": "supervisor"}).to_list(None)
     return [User(**supervisor) for supervisor in supervisors]
 
+# Payment information management
+@api_router.post("/admin/payments", response_model=PaymentInfo)
+async def create_payment_info(payment_data: PaymentInfoCreate, current_user: User = Depends(admin_only)):
+    # Check if bid exists
+    bid = await db.bids.find_one({"id": payment_data.bid_id})
+    if not bid:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bid not found"
+        )
+    
+    # Check if payment info already exists for this bid
+    existing_payment = await db.payment_info.find_one({"bid_id": payment_data.bid_id})
+    if existing_payment:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Payment information already exists for this bid"
+        )
+    
+    payment_dict = payment_data.dict()
+    payment_dict["created_by_admin"] = current_user.id
+    
+    payment_info = PaymentInfo(**payment_dict)
+    await db.payment_info.insert_one(payment_info.dict())
+    
+    return payment_info
+
+@api_router.get("/admin/payments", response_model=List[PaymentInfo])
+async def get_all_payment_info(current_user: User = Depends(admin_only)):
+    payments = await db.payment_info.find().to_list(None)
+    return [PaymentInfo(**payment) for payment in payments]
+
+@api_router.get("/payments/student/{student_id}", response_model=List[PaymentInfo])
+async def get_student_payment_info(student_id: str, current_user: User = Depends(get_current_user)):
+    # Students can only see their own payment info
+    if current_user.role == "student" and current_user.id != student_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied"
+        )
+    
+    payments = await db.payment_info.find({"student_id": student_id}).to_list(None)
+    return [PaymentInfo(**payment) for payment in payments]
+
+@api_router.get("/payments/bid/{bid_id}", response_model=PaymentInfo)
+async def get_payment_info_by_bid(bid_id: str, current_user: User = Depends(get_current_user)):
+    payment = await db.payment_info.find_one({"bid_id": bid_id})
+    if not payment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Payment information not found"
+        )
+    
+    # Check permissions
+    if current_user.role == "student":
+        if payment["student_id"] != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied"
+            )
+    
+    return PaymentInfo(**payment)
+
+@api_router.put("/admin/payments/{payment_id}")
+async def update_payment_info(payment_id: str, payment_data: PaymentInfoCreate, current_user: User = Depends(admin_only)):
+    payment = await db.payment_info.find_one({"id": payment_id})
+    if not payment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Payment information not found"
+        )
+    
+    update_data = payment_data.dict()
+    await db.payment_info.update_one(
+        {"id": payment_id},
+        {"$set": update_data}
+    )
+    
+    return {"message": "Payment information updated successfully"}
+
+@api_router.delete("/admin/payments/{payment_id}")
+async def delete_payment_info(payment_id: str, current_user: User = Depends(admin_only)):
+    await db.payment_info.delete_one({"id": payment_id})
+    return {"message": "Payment information deleted successfully"}
+
 # File upload
 @api_router.post("/upload")
 async def upload_file(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
