@@ -234,7 +234,11 @@ const translations = {
     paypal: "PayPal",
     stripe: "Stripe",
     custom: "Προσαρμοσμένο",
-    close: "Κλείσιμο"
+    close: "Κλείσιμο",
+    sortBy: "Ταξινόμηση κατά",
+    newest: "Νεότερα",
+    oldest: "Παλαιότερα",
+    sortByDate: "Ταξινόμηση κατά Ημερομηνία"
   }
 };
 
