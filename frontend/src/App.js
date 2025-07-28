@@ -246,7 +246,15 @@ const translations = {
     sortBy: "Ταξινόμηση κατά",
     newest: "Νεότερα",
     oldest: "Παλαιότερα",
-    sortByDate: "Ταξινόμηση κατά Ημερομηνία"
+    sortByDate: "Ταξινόμηση κατά Ημερομηνία",
+    payments: "Πληρωμές",
+    pendingPayment: "Πληρωμή σε Αναμονή",
+    approvedPayment: "Πληρωμή Εγκρίθηκε",
+    rejectedPayment: "Πληρωμή Απορρίφθηκε",
+    approvePayment: "Έγκριση Πληρωμής",
+    paymentStatus: "Κατάσταση Πληρωμής",
+    paymentApproved: "Πληρωμή Εγκρίθηκε",
+    essayAssigned: "Δοκίμιο Ανατέθηκε"
   }
 };
 
