@@ -329,8 +329,7 @@ def test_bidding_system(results: TestResults):
         bid_data2 = {
             "request_id": results.test_data["essay_request_id"],
             "price": 120.00,
-            "estimated_completion": (datetime.now() + timedelta(days=12)).isoformat(),
-            "proposal": "Alternative proposal with competitive pricing."
+            "notes": "Alternative proposal with competitive pricing."
         }
         
         success, response, status = make_request("POST", "/bids", bid_data2, results.tokens["supervisor"])
