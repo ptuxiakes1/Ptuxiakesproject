@@ -2534,15 +2534,17 @@ const PaymentInfoForm = ({ payment, onClose, onSuccess, bids }) => {
   const { t } = useContext(LanguageContext);
   const [formData, setFormData] = useState({
     student_id: payment?.student_id || '',
-    bid_id: payment?.bid_id || '',
+    request_id: payment?.request_id || '', // Changed from bid_id to request_id
     payment_method: payment?.payment_method || 'IBAN',
     payment_details: payment?.payment_details || '',
     instructions: payment?.instructions || ''
   });
   const [students, setStudents] = useState([]);
+  const [requests, setRequests] = useState([]);
 
   useEffect(() => {
     fetchStudents();
+    fetchRequests();
   }, []);
 
   const fetchStudents = async () => {
@@ -2554,13 +2556,28 @@ const PaymentInfoForm = ({ payment, onClose, onSuccess, bids }) => {
     }
   };
 
+  const fetchRequests = async () => {
+    try {
+      const response = await axios.get(`${API}/requests`);
+      setRequests(response.data);
+    } catch (error) {
+      console.error('Error fetching requests:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Create a bid_id placeholder or find existing bid for the request
+      const submitData = {
+        ...formData,
+        bid_id: `admin_bid_${formData.request_id}` // Placeholder for admin-created payment
+      };
+      
       if (payment) {
-        await axios.put(`${API}/admin/payments/${payment.id}`, formData);
+        await axios.put(`${API}/admin/payments/${payment.id}`, submitData);
       } else {
-        await axios.post(`${API}/admin/payments`, formData);
+        await axios.post(`${API}/admin/payments`, submitData);
       }
       onSuccess();
     } catch (error) {
@@ -2568,6 +2585,8 @@ const PaymentInfoForm = ({ payment, onClose, onSuccess, bids }) => {
       alert('Error saving payment information');
     }
   };
+
+  const selectedRequest = requests.find(r => r.id === formData.request_id);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -2594,22 +2613,36 @@ const PaymentInfoForm = ({ payment, onClose, onSuccess, bids }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Bid
+              Essay Request
             </label>
             <select
-              value={formData.bid_id}
-              onChange={(e) => setFormData({...formData, bid_id: e.target.value})}
+              value={formData.request_id}
+              onChange={(e) => setFormData({...formData, request_id: e.target.value})}
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               required
             >
-              <option value="">Select Bid</option>
-              {bids.filter(bid => bid.status === 'accepted').map(bid => (
-                <option key={bid.id} value={bid.id}>
-                  ${bid.price} - {bid.notes.substring(0, 30)}...
+              <option value="">Select Essay Request</option>
+              {requests.map(request => (
+                <option key={request.id} value={request.id}>
+                  {request.title} - {request.field_of_study} ({request.word_count} words)
                 </option>
               ))}
             </select>
           </div>
+
+          {selectedRequest && (
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <p className="text-sm text-gray-600">
+                <strong>Student:</strong> {students.find(s => s.id === selectedRequest.student_id)?.name || 'Unknown'}
+              </p>
+              <p className="text-sm text-gray-600">
+                <strong>Due Date:</strong> {new Date(selectedRequest.due_date).toLocaleDateString()}
+              </p>
+              <p className="text-sm text-gray-600">
+                <strong>Status:</strong> {selectedRequest.status}
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
