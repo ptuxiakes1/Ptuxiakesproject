@@ -1214,6 +1214,18 @@ const SystemSettings = () => {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('loginTitle')}
+            </label>
+            <input
+              type="text"
+              value={settings.login_title || settings.site_title}
+              onChange={(e) => setSettings({...settings, login_title: e.target.value})}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+            />
+          </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               {t('siteDescription')}
             </label>
             <input
