@@ -87,6 +87,7 @@ class Bid(BaseModel):
 class SystemSettings(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     site_title: str = "Essay Bid Submission System"
+    login_title: str = "Essay Bid Submission System"  # Configurable login page title
     site_description: str = "Professional essay writing and bidding platform"
     header_color: str = "#1e3a8a"  # Default blue
     header_text_color: str = "#ffffff"  # Default white
