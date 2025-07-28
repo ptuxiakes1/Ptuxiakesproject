@@ -2524,6 +2524,26 @@ const PaymentManagement = () => {
     }
   };
 
+  const approvePayment = async (paymentId) => {
+    try {
+      await axios.put(`${API}/admin/payments/${paymentId}/approve`);
+      await fetchData(); // Refresh data
+      alert('Payment approved and essay assigned successfully');
+    } catch (error) {
+      console.error('Error approving payment:', error);
+      alert('Error approving payment');
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'approved': return 'bg-green-100 text-green-800 border-green-200';
+      case 'rejected': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
   return (
     <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-4 sm:space-y-0">
@@ -2554,22 +2574,34 @@ const PaymentManagement = () => {
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">{t('studentName')}</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Essay Request</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">{t('paymentMethod')}</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">{t('paymentDetails')}</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">{t('paymentStatus')}</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
             </tr>
           </thead>
           <tbody>
             {payments.map((payment) => {
-              const student = payments.find(p => p.student_id)?.student_id;
-              const request = payments.find(p => p.request_id === payment.request_id);
               return (
                 <tr key={payment.id} className="border-b border-gray-200 hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm">{student || payment.student_id}</td>
+                  <td className="px-4 py-3 text-sm">{payment.student_id}</td>
                   <td className="px-4 py-3 text-sm">{payment.request_id}</td>
                   <td className="px-4 py-3 text-sm">{payment.payment_method}</td>
-                  <td className="px-4 py-3 text-sm">{payment.payment_details.substring(0, 30)}...</td>
+                  <td className="px-4 py-3 text-sm">
+                    <span className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(payment.status)}`}>
+                      {t(payment.status === 'pending' ? 'pendingPayment' : 
+                         payment.status === 'approved' ? 'approvedPayment' : 
+                         'rejectedPayment')}
+                    </span>
+                  </td>
                   <td className="px-4 py-3 text-sm">
                     <div className="flex space-x-2">
+                      {payment.status === 'pending' && (
+                        <button
+                          onClick={() => approvePayment(payment.id)}
+                          className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-xs"
+                        >
+                          {t('approvePayment')}
+                        </button>
+                      )}
                       <button
                         onClick={() => setSelectedPayment(payment)}
                         className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs"
