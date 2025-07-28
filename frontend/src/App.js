@@ -863,6 +863,7 @@ const EssayRequestsView = ({ requests, onRefresh }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [sortOrder, setSortOrder] = useState('newest'); // Added sort state
   const [categories, setCategories] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
 
@@ -871,8 +872,8 @@ const EssayRequestsView = ({ requests, onRefresh }) => {
   }, []);
 
   useEffect(() => {
-    filterRequests();
-  }, [requests, searchTerm, selectedCategory]);
+    filterAndSortRequests();
+  }, [requests, searchTerm, selectedCategory, sortOrder]); // Added sortOrder to dependencies
 
   const fetchCategories = async () => {
     try {
@@ -883,9 +884,10 @@ const EssayRequestsView = ({ requests, onRefresh }) => {
     }
   };
 
-  const filterRequests = () => {
+  const filterAndSortRequests = () => {
     let filtered = requests;
 
+    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(request => 
         request.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -894,9 +896,22 @@ const EssayRequestsView = ({ requests, onRefresh }) => {
       );
     }
 
+    // Apply category filter
     if (selectedCategory) {
       filtered = filtered.filter(request => request.field_of_study === selectedCategory);
     }
+
+    // Apply sorting
+    filtered = filtered.sort((a, b) => {
+      const dateA = new Date(a.created_at);
+      const dateB = new Date(b.created_at);
+      
+      if (sortOrder === 'newest') {
+        return dateB - dateA; // Newest first
+      } else {
+        return dateA - dateB; // Oldest first
+      }
+    });
 
     setFilteredRequests(filtered);
   };
@@ -928,20 +943,23 @@ const EssayRequestsView = ({ requests, onRefresh }) => {
         )}
       </div>
 
-      {/* Search and Filter Section */}
-      {(user?.role === 'supervisor' || user?.role === 'admin') && (
-        <div className="mb-6 space-y-4">
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder={t('searchRequests')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
-              />
-            </div>
-            <div className="flex-1 sm:flex-none sm:w-48">
+      {/* Search, Filter, and Sort Section */}
+      <div className="mb-6 space-y-4">
+        <div className="flex flex-col lg:flex-row space-y-2 lg:space-y-0 lg:space-x-4">
+          {/* Search Input */}
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder={t('searchRequests')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+            />
+          </div>
+          
+          {/* Category Filter - Available for supervisors and admins */}
+          {(user?.role === 'supervisor' || user?.role === 'admin') && (
+            <div className="flex-1 lg:flex-none lg:w-48">
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
@@ -953,15 +971,31 @@ const EssayRequestsView = ({ requests, onRefresh }) => {
                 ))}
               </select>
             </div>
+          )}
+          
+          {/* Sort Dropdown - Available for all users */}
+          <div className="flex-1 lg:flex-none lg:w-40">
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value)}
+              className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+            >
+              <option value="newest">{t('newest')}</option>
+              <option value="oldest">{t('oldest')}</option>
+            </select>
+          </div>
+
+          {/* Search Button - Available for supervisors and admins */}
+          {(user?.role === 'supervisor' || user?.role === 'admin') && (
             <button
               onClick={handleSearch}
               className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 text-sm sm:text-base"
             >
               {t('search')}
             </button>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
       {showCreateForm && (
         <CreateRequestForm
@@ -982,10 +1016,10 @@ const EssayRequestsView = ({ requests, onRefresh }) => {
       )}
 
       <div className="space-y-4">
-        {(user?.role === 'supervisor' || user?.role === 'admin' ? filteredRequests : requests).length === 0 ? (
+        {(user?.role === 'supervisor' || user?.role === 'admin' ? filteredRequests : filteredRequests).length === 0 ? (
           <div className="text-center text-gray-500 py-8">{t('noResults')}</div>
         ) : (
-          (user?.role === 'supervisor' || user?.role === 'admin' ? filteredRequests : requests).map((request) => (
+          (user?.role === 'supervisor' || user?.role === 'admin' ? filteredRequests : filteredRequests).map((request) => (
             <RequestCard 
               key={request.id} 
               request={request} 
