@@ -116,6 +116,7 @@ class PaymentInfoCreate(BaseModel):
 
 class SystemSettingsUpdate(BaseModel):
     site_title: Optional[str] = None
+    login_title: Optional[str] = None  # Allow updating login page title
     site_description: Optional[str] = None
     header_color: Optional[str] = None
     header_text_color: Optional[str] = None
