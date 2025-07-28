@@ -697,6 +697,8 @@ const Dashboard = () => {
         return user?.role === 'admin' ? <AdminSettings /> : <div>Access denied</div>;
       case 'systemSettings':
         return user?.role === 'admin' ? <SystemSettings /> : <div>Access denied</div>;
+      case 'payments':
+        return user?.role === 'admin' ? <PaymentManagement /> : <div>Access denied</div>;
       case 'users':
         return user?.role === 'admin' ? <UserManagement /> : <div>Access denied</div>;
       case 'pendingMessages':
