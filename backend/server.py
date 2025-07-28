@@ -100,7 +100,8 @@ class SystemSettings(BaseModel):
 class PaymentInfo(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     student_id: str
-    bid_id: str
+    request_id: str  # Changed from bid_id to request_id
+    bid_id: Optional[str] = None  # Keep as optional for backward compatibility
     payment_method: str  # "IBAN", "PayPal", "Stripe", "Custom"
     payment_details: str  # IBAN number, PayPal email, Stripe link, or custom info
     instructions: Optional[str] = None  # Additional payment instructions
@@ -109,7 +110,8 @@ class PaymentInfo(BaseModel):
 
 class PaymentInfoCreate(BaseModel):
     student_id: str
-    bid_id: str
+    request_id: str  # Changed from bid_id to request_id
+    bid_id: Optional[str] = None  # Keep as optional
     payment_method: str
     payment_details: str
     instructions: Optional[str] = None
