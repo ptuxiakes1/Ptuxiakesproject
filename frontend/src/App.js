@@ -2752,18 +2752,18 @@ const PaymentInfoForm = ({ payment, onClose, onSuccess, bids }) => {
 };
 
 // Payment Info Modal (for students to view payment details)
-const PaymentInfoModal = ({ bidId, onClose }) => {
+const PaymentInfoModal = ({ requestId, onClose }) => {
   const { t } = useContext(LanguageContext);
   const [paymentInfo, setPaymentInfo] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchPaymentInfo();
-  }, [bidId]);
+  }, [requestId]);
 
   const fetchPaymentInfo = async () => {
     try {
-      const response = await axios.get(`${API}/payments/bid/${bidId}`);
+      const response = await axios.get(`${API}/payments/request/${requestId}`);
       setPaymentInfo(response.data);
     } catch (error) {
       console.error('Error fetching payment info:', error);
