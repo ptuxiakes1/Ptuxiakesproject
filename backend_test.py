@@ -311,7 +311,7 @@ def test_bidding_system(results: TestResults):
         bid_id = results.test_data["bid_id"]
         
         # Test accepting a bid
-        success, response, status = make_request("PUT", f"/bids/{bid_id}/status?status=accepted", token=results.tokens["admin"])
+        success, response, status = make_request("PUT", f"/bids/{bid_id}/status", {"status": "accepted"}, results.tokens["admin"])
         if success:
             results.add_result("Admin Bid Acceptance", True, "Admin successfully accepted bid")
             
