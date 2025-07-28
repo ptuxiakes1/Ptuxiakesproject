@@ -96,6 +96,23 @@ class SystemSettings(BaseModel):
     logo_url: Optional[str] = None
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
+class PaymentInfo(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    student_id: str
+    bid_id: str
+    payment_method: str  # "IBAN", "PayPal", "Stripe", "Custom"
+    payment_details: str  # IBAN number, PayPal email, Stripe link, or custom info
+    instructions: Optional[str] = None  # Additional payment instructions
+    created_by_admin: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class PaymentInfoCreate(BaseModel):
+    student_id: str
+    bid_id: str
+    payment_method: str
+    payment_details: str
+    instructions: Optional[str] = None
+
 class SystemSettingsUpdate(BaseModel):
     site_title: Optional[str] = None
     site_description: Optional[str] = None
