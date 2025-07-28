@@ -105,7 +105,10 @@ class PaymentInfo(BaseModel):
     payment_method: str  # "IBAN", "PayPal", "Stripe", "Custom"
     payment_details: str  # IBAN number, PayPal email, Stripe link, or custom info
     instructions: Optional[str] = None  # Additional payment instructions
+    status: str = "pending"  # pending, approved, rejected
     created_by_admin: str
+    approved_by: Optional[str] = None
+    approved_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class PaymentInfoCreate(BaseModel):
