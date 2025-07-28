@@ -126,7 +126,15 @@ const translations = {
     sortBy: "Sort by",
     newest: "Newest",
     oldest: "Oldest",
-    sortByDate: "Sort by Date"
+    sortByDate: "Sort by Date",
+    payments: "Payments",
+    pendingPayment: "Pending Payment",
+    approvedPayment: "Approved Payment",
+    rejectedPayment: "Rejected Payment",
+    approvePayment: "Approve Payment",
+    paymentStatus: "Payment Status",
+    paymentApproved: "Payment Approved",
+    essayAssigned: "Essay Assigned"
   },
   gr: {
     appTitle: "Σύστημα Υποβολής Προσφορών για Δοκίμια",
