@@ -402,6 +402,7 @@ const LanguageProvider = ({ children }) => {
 const AuthForm = () => {
   const { login, register } = useContext(AuthContext);
   const { t } = useContext(LanguageContext);
+  const { systemSettings } = useContext(SystemSettingsContext);
   const [isLogin, setIsLogin] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -477,7 +478,7 @@ const AuthForm = () => {
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <h2 className="mt-6 text-2xl sm:text-3xl font-extrabold text-gray-900 leading-tight">
-            {t('appTitle')}
+            {systemSettings.login_title || t('appTitle')}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             {isLogin ? t('login') : t('register')}
@@ -537,7 +538,7 @@ const AuthForm = () => {
               onClick={() => setIsLogin(!isLogin)}
               className="text-blue-600 hover:text-blue-500 transition-colors text-sm sm:text-base"
             >
-              {isLogin ? 'Χρειάζεστε να εγγραφείτε;' : 'Έχετε ήδη λογαριασμό;'}
+              {isLogin ? t('needToRegister') : t('alreadyHaveAccount')}
             </button>
             {isLogin && (
               <div>
