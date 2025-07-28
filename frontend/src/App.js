@@ -1874,7 +1874,7 @@ const RequestCard = ({ request, onRefresh, onViewDetails }) => {
 
       {showPaymentModal && (
         <PaymentInfoModal
-          bidId={showPaymentModal}
+          requestId={showPaymentModal}
           onClose={() => setShowPaymentModal(null)}
         />
       )}
