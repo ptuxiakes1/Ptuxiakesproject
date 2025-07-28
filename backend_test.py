@@ -351,7 +351,7 @@ def test_bidding_system(results: TestResults):
     
     # Test bid validation - invalid status
     if "admin" in results.tokens and "bid_id" in results.test_data:
-        success, response, status = make_request("PUT", f"/bids/{results.test_data['bid_id']}/status", {"status": "invalid_status"}, results.tokens["admin"])
+        success, response, status = make_request("PUT", f"/bids/{results.test_data['bid_id']}/status?status_value=invalid_status", token=results.tokens["admin"])
         if not success and status == 400:
             results.add_result("Bid Status Validation", True, "Correctly validated bid status values")
         else:
