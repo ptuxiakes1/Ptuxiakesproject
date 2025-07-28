@@ -2372,6 +2372,342 @@ const UserForm = ({ user, onClose, onSubmit, title }) => {
   );
 };
 
+// Payment Management Component
+const PaymentManagement = () => {
+  const { t } = useContext(LanguageContext);
+  const [payments, setPayments] = useState([]);
+  const [bids, setBids] = useState([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const [paymentsRes, bidsRes] = await Promise.all([
+        axios.get(`${API}/admin/payments`),
+        axios.get(`${API}/bids`)
+      ]);
+      setPayments(paymentsRes.data);
+      setBids(bidsRes.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  return (
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-lg">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 space-y-4 sm:space-y-0">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{t('managePayments')}</h2>
+        <button
+          onClick={() => setShowCreateForm(true)}
+          className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg font-medium text-sm sm:text-base"
+        >
+          {t('createPaymentInfo')}
+        </button>
+      </div>
+
+      {showCreateForm && (
+        <PaymentInfoForm
+          onClose={() => setShowCreateForm(false)}
+          onSuccess={() => {
+            setShowCreateForm(false);
+            fetchData();
+          }}
+          bids={bids}
+        />
+      )}
+
+      <div className="overflow-x-auto">
+        <table className="w-full table-auto">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">{t('studentName')}</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">{t('bidAmount')}</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">{t('paymentMethod')}</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">{t('paymentDetails')}</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {payments.map((payment) => (
+              <tr key={payment.id} className="border-b border-gray-200 hover:bg-gray-50">
+                <td className="px-4 py-3 text-sm">{payment.student_id}</td>
+                <td className="px-4 py-3 text-sm">
+                  ${bids.find(b => b.id === payment.bid_id)?.price || 'N/A'}
+                </td>
+                <td className="px-4 py-3 text-sm">{payment.payment_method}</td>
+                <td className="px-4 py-3 text-sm">{payment.payment_details.substring(0, 30)}...</td>
+                <td className="px-4 py-3 text-sm">
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setSelectedPayment(payment)}
+                      className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs"
+                    >
+                      {t('edit')}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {selectedPayment && (
+        <PaymentInfoForm
+          payment={selectedPayment}
+          onClose={() => setSelectedPayment(null)}
+          onSuccess={() => {
+            setSelectedPayment(null);
+            fetchData();
+          }}
+          bids={bids}
+        />
+      )}
+    </div>
+  );
+};
+
+// Payment Info Form Component
+const PaymentInfoForm = ({ payment, onClose, onSuccess, bids }) => {
+  const { t } = useContext(LanguageContext);
+  const [formData, setFormData] = useState({
+    student_id: payment?.student_id || '',
+    bid_id: payment?.bid_id || '',
+    payment_method: payment?.payment_method || 'IBAN',
+    payment_details: payment?.payment_details || '',
+    instructions: payment?.instructions || ''
+  });
+  const [students, setStudents] = useState([]);
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  const fetchStudents = async () => {
+    try {
+      const response = await axios.get(`${API}/admin/users`);
+      setStudents(response.data.filter(user => user.role === 'student'));
+    } catch (error) {
+      console.error('Error fetching students:', error);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (payment) {
+        await axios.put(`${API}/admin/payments/${payment.id}`, formData);
+      } else {
+        await axios.post(`${API}/admin/payments`, formData);
+      }
+      onSuccess();
+    } catch (error) {
+      console.error('Error saving payment info:', error);
+      alert('Error saving payment information');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+        <h3 className="text-lg font-bold mb-4">{payment ? t('edit') : t('createPaymentInfo')}</h3>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('student')}
+            </label>
+            <select
+              value={formData.student_id}
+              onChange={(e) => setFormData({...formData, student_id: e.target.value})}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              required
+            >
+              <option value="">Select Student</option>
+              {students.map(student => (
+                <option key={student.id} value={student.id}>{student.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Bid
+            </label>
+            <select
+              value={formData.bid_id}
+              onChange={(e) => setFormData({...formData, bid_id: e.target.value})}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              required
+            >
+              <option value="">Select Bid</option>
+              {bids.filter(bid => bid.status === 'accepted').map(bid => (
+                <option key={bid.id} value={bid.id}>
+                  ${bid.price} - {bid.notes.substring(0, 30)}...
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('paymentMethod')}
+            </label>
+            <select
+              value={formData.payment_method}
+              onChange={(e) => setFormData({...formData, payment_method: e.target.value})}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            >
+              <option value="IBAN">{t('iban')}</option>
+              <option value="PayPal">{t('paypal')}</option>
+              <option value="Stripe">{t('stripe')}</option>
+              <option value="Custom">{t('custom')}</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('paymentDetails')}
+            </label>
+            <input
+              type="text"
+              value={formData.payment_details}
+              onChange={(e) => setFormData({...formData, payment_details: e.target.value})}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              placeholder="IBAN, PayPal email, Stripe link, etc."
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t('paymentInstructions')}
+            </label>
+            <textarea
+              value={formData.instructions}
+              onChange={(e) => setFormData({...formData, instructions: e.target.value})}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              rows="3"
+              placeholder="Additional payment instructions..."
+            />
+          </div>
+
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            <button
+              type="submit"
+              className="flex-1 py-3 px-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 transition-all duration-200 font-medium text-sm"
+            >
+              {t('save')}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-3 px-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
+            >
+              {t('cancel')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Payment Info Modal (for students to view payment details)
+const PaymentInfoModal = ({ bidId, onClose }) => {
+  const { t } = useContext(LanguageContext);
+  const [paymentInfo, setPaymentInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPaymentInfo();
+  }, [bidId]);
+
+  const fetchPaymentInfo = async () => {
+    try {
+      const response = await axios.get(`${API}/payments/bid/${bidId}`);
+      setPaymentInfo(response.data);
+    } catch (error) {
+      console.error('Error fetching payment info:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+          <div className="text-center">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!paymentInfo) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+          <h3 className="text-lg font-bold mb-4">{t('paymentInfo')}</h3>
+          <p className="text-gray-600 mb-4">No payment information available for this bid.</p>
+          <button
+            onClick={onClose}
+            className="w-full py-3 px-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
+          >
+            {t('close')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+        <h3 className="text-lg font-bold mb-4">{t('paymentInfo')}</h3>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('paymentMethod')}
+            </label>
+            <p className="text-gray-900">{paymentInfo.payment_method}</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('paymentDetails')}
+            </label>
+            <p className="text-gray-900 font-mono text-sm bg-gray-100 p-3 rounded-lg">
+              {paymentInfo.payment_details}
+            </p>
+          </div>
+
+          {paymentInfo.instructions && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('paymentInstructions')}
+              </label>
+              <p className="text-gray-900 bg-blue-50 p-3 rounded-lg text-sm">
+                {paymentInfo.instructions}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={onClose}
+          className="w-full mt-6 py-3 px-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-medium text-sm"
+        >
+          {t('close')}
+        </button>
+      </div>
+    </div>
+
 // Main App Component
 function App() {
   const { user } = useContext(AuthContext);
