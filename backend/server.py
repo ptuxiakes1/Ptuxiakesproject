@@ -1048,6 +1048,50 @@ async def get_payment_info_by_bid(bid_id: str, current_user: User = Depends(get_
     
     return PaymentInfo(**payment)
 
+@api_router.put("/admin/payments/{payment_id}/approve")
+async def approve_payment(payment_id: str, current_user: User = Depends(admin_only)):
+    payment = await db.payment_info.find_one({"id": payment_id})
+    if not payment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Payment information not found"
+        )
+    
+    # Update payment status to approved
+    await db.payment_info.update_one(
+        {"id": payment_id},
+        {"$set": {
+            "status": "approved",
+            "approved_by": current_user.id,
+            "approved_at": datetime.utcnow()
+        }}
+    )
+    
+    # Auto-assign the essay request when payment is approved
+    request_id = payment["request_id"]
+    request = await db.essay_requests.find_one({"id": request_id})
+    
+    if request:
+        # Update essay request status to accepted and assign to admin (or available supervisor)
+        await db.essay_requests.update_one(
+            {"id": request_id},
+            {"$set": {
+                "status": "accepted",
+                "assigned_supervisor": current_user.id  # Assign to approving admin for now
+            }}
+        )
+        
+        # Notify student about payment approval and essay assignment
+        notification = Notification(
+            user_id=payment["student_id"],
+            title="Payment Approved - Essay Assigned",
+            message=f"Your payment has been approved and essay '{request['title']}' has been assigned",
+            type="payment_approved"
+        )
+        await db.notifications.insert_one(notification.dict())
+    
+    return {"message": "Payment approved and essay assigned successfully"}
+
 @api_router.put("/admin/payments/{payment_id}")
 async def update_payment_info(payment_id: str, payment_data: PaymentInfoCreate, current_user: User = Depends(admin_only)):
     payment = await db.payment_info.find_one({"id": payment_id})
