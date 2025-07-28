@@ -269,8 +269,7 @@ def test_bidding_system(results: TestResults):
     bid_data = {
         "request_id": results.test_data["essay_request_id"],
         "price": 150.00,
-        "estimated_completion": (datetime.now() + timedelta(days=10)).isoformat(),
-        "proposal": "I have extensive experience in ancient Greek philosophy and have published several papers on Aristotelian ethics. I can provide a comprehensive analysis that bridges classical and contemporary perspectives."
+        "notes": "I have extensive experience in ancient Greek philosophy and have published several papers on Aristotelian ethics. I can provide a comprehensive analysis that bridges classical and contemporary perspectives."
     }
     
     success, response, status = make_request("POST", "/bids", bid_data, results.tokens["supervisor"])
