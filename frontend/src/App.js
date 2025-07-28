@@ -122,7 +122,11 @@ const translations = {
     paypal: "PayPal",
     stripe: "Stripe",
     custom: "Custom",
-    close: "Close"
+    close: "Close",
+    sortBy: "Sort by",
+    newest: "Newest",
+    oldest: "Oldest",
+    sortByDate: "Sort by Date"
   },
   gr: {
     appTitle: "Σύστημα Υποβολής Προσφορών για Δοκίμια",
