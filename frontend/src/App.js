@@ -2526,33 +2526,35 @@ const PaymentManagement = () => {
           <thead>
             <tr className="bg-gray-50">
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">{t('studentName')}</th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">{t('bidAmount')}</th>
+              <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Essay Request</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">{t('paymentMethod')}</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">{t('paymentDetails')}</th>
               <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {payments.map((payment) => (
-              <tr key={payment.id} className="border-b border-gray-200 hover:bg-gray-50">
-                <td className="px-4 py-3 text-sm">{payment.student_id}</td>
-                <td className="px-4 py-3 text-sm">
-                  ${bids.find(b => b.id === payment.bid_id)?.price || 'N/A'}
-                </td>
-                <td className="px-4 py-3 text-sm">{payment.payment_method}</td>
-                <td className="px-4 py-3 text-sm">{payment.payment_details.substring(0, 30)}...</td>
-                <td className="px-4 py-3 text-sm">
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => setSelectedPayment(payment)}
-                      className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs"
-                    >
-                      {t('edit')}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {payments.map((payment) => {
+              const student = payments.find(p => p.student_id)?.student_id;
+              const request = payments.find(p => p.request_id === payment.request_id);
+              return (
+                <tr key={payment.id} className="border-b border-gray-200 hover:bg-gray-50">
+                  <td className="px-4 py-3 text-sm">{student || payment.student_id}</td>
+                  <td className="px-4 py-3 text-sm">{payment.request_id}</td>
+                  <td className="px-4 py-3 text-sm">{payment.payment_method}</td>
+                  <td className="px-4 py-3 text-sm">{payment.payment_details.substring(0, 30)}...</td>
+                  <td className="px-4 py-3 text-sm">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => setSelectedPayment(payment)}
+                        className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-xs"
+                      >
+                        {t('edit')}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
