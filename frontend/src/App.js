@@ -717,6 +717,8 @@ const Dashboard = () => {
         return <NotificationsView notifications={notifications} onRefresh={fetchData} />;
       case 'questions':
         return <QuestionsView questions={questions} onRefresh={fetchData} />;
+      case 'payments':
+        return user?.role === 'student' ? <StudentPaymentsView /> : <div>Access denied</div>;
       case 'settings':
         return user?.role === 'admin' ? <AdminSettings /> : <div>Access denied</div>;
       case 'systemSettings':
