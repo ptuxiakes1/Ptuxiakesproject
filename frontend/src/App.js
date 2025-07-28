@@ -1766,22 +1766,23 @@ const RequestCard = ({ request, onRefresh, onViewDetails }) => {
     try {
       // Only show payment info if the request is accepted and assigned
       if (request.status === 'accepted' && request.assigned_supervisor) {
-        // Instead of fetching all bids, we'll check if payment info exists
-        // The presence of payment info indicates there's an accepted bid
+        // Check if payment info exists for this request
         try {
-          const paymentResponse = await axios.get(`${API}/payments/student/${user.id}`);
-          const requestPayments = paymentResponse.data.filter(p => {
-            // We need to check if this payment belongs to a bid for this request
-            return true; // For now, show all payments for the student
-          });
-          setAcceptedBids(requestPayments.map(p => ({ id: p.bid_id, price: 'Set by Admin', notes: 'Payment available' })));
+          const paymentResponse = await axios.get(`${API}/payments/request/${request.id}`);
+          if (paymentResponse.data) {
+            setAcceptedBids([{ 
+              id: paymentResponse.data.id, 
+              price: 'Payment Available', 
+              notes: 'Payment information set by admin' 
+            }]);
+          }
         } catch (error) {
-          // No payment info available
+          // No payment info available for this request
           setAcceptedBids([]);
         }
       }
     } catch (error) {
-      console.error('Error fetching accepted bids:', error);
+      console.error('Error fetching payment info:', error);
     }
   };
 
