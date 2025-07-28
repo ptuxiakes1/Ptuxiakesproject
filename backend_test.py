@@ -335,7 +335,7 @@ def test_bidding_system(results: TestResults):
         success, response, status = make_request("POST", "/bids", bid_data2, results.tokens["supervisor"])
         if success and "id" in response:
             bid_id2 = response["id"]
-            success, response, status = make_request("PUT", f"/bids/{bid_id2}/status?status=rejected", token=results.tokens["admin"])
+            success, response, status = make_request("PUT", f"/bids/{bid_id2}/status", {"status": "rejected"}, results.tokens["admin"])
             if success:
                 results.add_result("Admin Bid Rejection", True, "Admin successfully rejected bid")
             else:
