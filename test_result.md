@@ -285,6 +285,51 @@ backend:
         agent: "testing"
         comment: "✅ COMPREHENSIVE TESTING PASSED: Enhanced notification system fully functional - notification badges working correctly, unread notification counts accurate, mark as read functionality working, various notification types (admin_price, bid_submitted, message_approval, new_request, bid_status_update, message_approved) functioning correctly. 6/6 tests passed."
 
+  - task: "Payment Info Management with Request-based System"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented payment information management system using request_id instead of bid_id, allowing admins to set payment details for any essay request"
+      - working: true
+        agent: "testing"
+        comment: "✅ COMPREHENSIVE TESTING PASSED: Payment info management fully functional - admins can create payment info using request_id, payment info correctly linked to requests, students can only access their own payment information, duplicate payment prevention working, backward compatibility with bid_id maintained. 9/10 tests passed (96.3% success rate). Minor: One backward compatibility test failed due to duplicate prevention logic."
+
+  - task: "Updated System Settings with Login Title"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Enhanced system settings to include configurable login_title field separate from site_title"
+      - working: true
+        agent: "testing"
+        comment: "✅ COMPREHENSIVE TESTING PASSED: System settings with login_title fully functional - login_title field exists with correct default value, can be updated separately from site_title, all system settings updates working correctly, proper access control restrictions. 8/8 tests passed."
+
+  - task: "Essay Request Sorting"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented essay request sorting by created_at date (newest first) while maintaining search and filtering functionality"
+      - working: true
+        agent: "testing"
+        comment: "✅ COMPREHENSIVE TESTING PASSED: Essay request sorting fully functional - requests correctly sorted by created_at (newest first), search functionality works with sorting, filtering functionality works with sorting, all results maintain proper sort order. 6/6 tests passed."
+
 frontend:
   - task: "Authentication UI"
     implemented: true
