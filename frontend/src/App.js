@@ -781,6 +781,12 @@ const Dashboard = () => {
                     {t('systemSettings')}
                   </button>
                   <button
+                    onClick={() => setCurrentView('payments')}
+                    className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'payments' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
+                  >
+                    {t('paymentsTab')}
+                  </button>
+                  <button
                     onClick={() => setCurrentView('users')}
                     className={`flex-shrink-0 px-3 py-2 sm:px-4 sm:py-3 rounded-xl whitespace-nowrap font-medium transition-all duration-200 text-sm sm:text-base ${currentView === 'users' ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' : 'text-gray-700 hover:bg-blue-50'}`}
                   >
